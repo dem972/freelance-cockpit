@@ -96,6 +96,7 @@ describe("alerts", () => {
 });
 
 describe("GET /api/optimize", () => {
+  // ~30 engine runs (one per lever): slow on shared CI runners.
   it("ranks options on the real year", async () => {
     await call("PUT", "/projections/2026", {
       tjm: 50_000,
@@ -110,5 +111,5 @@ describe("GET /api/optimize", () => {
     };
     expect(body.baseline.statut).toBe("micro_bnc");
     expect(body.options.length).toBeGreaterThan(4);
-  });
+  }, 60_000);
 });
