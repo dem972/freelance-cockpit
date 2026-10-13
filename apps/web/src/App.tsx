@@ -15,6 +15,7 @@ import { Rapports } from "@/pages/Rapports";
 import { Reglages } from "@/pages/Reglages";
 import { Saisie } from "@/pages/Saisie";
 import { Simulator } from "@/pages/Simulator";
+import { Veille } from "@/pages/Veille";
 
 // Demo mode is a separate route and bundle, enabled by a build-time flag.
 const DEMO_ENABLED = import.meta.env.VITE_DEMO !== "false";
@@ -31,6 +32,8 @@ function Page({ route }: { route: Route }) {
       return <Saisie year={YEAR} />;
     case "/rapports":
       return <Rapports year={YEAR} />;
+    case "/veille":
+      return <Veille />;
     case "/reglages":
       return <Reglages year={YEAR} />;
     case "/demo":

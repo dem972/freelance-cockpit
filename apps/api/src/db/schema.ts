@@ -171,3 +171,22 @@ export const agentReports = pgTable("agent_reports", {
   data: jsonb("data").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Last known state of each official source page (rates watch). */
+export const sourceChecks = pgTable("source_checks", {
+  url: text("url").primaryKey(),
+  /** sha256 of the extracted main text; a change raises a proposal. */
+  contentHash: text("content_hash"),
+  /** ok | changed | unreachable */
+  status: text("status").notNull(),
+  detail: text("detail"),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One run of the rates watch (weekly or on demand), with its summary. */
+export const ratesWatchRuns = pgTable("rates_watch_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  summary: jsonb("summary").notNull().default({}),
+});

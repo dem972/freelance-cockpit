@@ -68,3 +68,20 @@ def test_proposals_and_reports(store: Store) -> None:
     rid = store.insert_report("2026-09", "Rapport septembre", "# Titre", {"net": 1})
     assert store.list_reports()[0]["id"] == rid
     assert store.get_report(rid)["markdown"] == "# Titre"  # type: ignore[index]
+
+
+def test_rates_watch_tables(store: Store) -> None:
+    store.save_source_check("https://a.example", "h1", "ok", None)
+    store.save_source_check("https://a.example", None, "unreachable", "reset")
+    assert store.source_hash("https://a.example") == "h1", (
+        "an unreachable check keeps the last hash"
+    )
+    assert store.list_source_checks()[0]["status"] == "unreachable"
+
+    store.create_proposal("rate_change", "x", {"key": "k", "proposed": 1.5}, None, "pending")
+    assert store.has_pending_proposal("rate_change", {"key": "k", "proposed": 1.5})
+    assert not store.has_pending_proposal("rate_change", {"key": "k", "proposed": 2})
+
+    run = store.start_run()
+    store.finish_run(run, {"confirmed": ["k"]})
+    assert store.list_runs()[0]["summary"] == {"confirmed": ["k"]}

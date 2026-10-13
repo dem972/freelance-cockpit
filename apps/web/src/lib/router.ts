@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 
-export type Route = "/simulateur" | "/cockpit" | "/saisie" | "/rapports" | "/reglages" | "/demo";
-const ROUTES: Route[] = ["/simulateur", "/cockpit", "/saisie", "/rapports", "/reglages", "/demo"];
+export type Route =
+  "/simulateur" | "/cockpit" | "/saisie" | "/rapports" | "/veille" | "/reglages" | "/demo";
+const ROUTES: Route[] = [
+  "/simulateur",
+  "/cockpit",
+  "/saisie",
+  "/rapports",
+  "/veille",
+  "/reglages",
+  "/demo",
+];
 
 function current(): Route {
   const path = window.location.pathname;

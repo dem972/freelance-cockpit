@@ -4,6 +4,7 @@ import {
   FlaskConical,
   LayoutDashboard,
   Monitor,
+  Radar,
   Moon,
   ReceiptText,
   Settings2,
@@ -62,6 +63,12 @@ export const PILOTAGE: NavItem[] = [
 ];
 
 export const OUTILS: NavItem[] = [
+  {
+    route: "/veille",
+    label: "Veille des taux",
+    description: "Sources officielles revérifiées chaque semaine",
+    icon: Radar,
+  },
   {
     route: "/simulateur",
     label: "Simulateur",

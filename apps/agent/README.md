@@ -31,6 +31,24 @@ scheduled tasks, Postgres + pgvector for memory, OpenAI for the models.
 Tables are created by the Drizzle migrations (`db/migrations`); LangGraph creates its own
 `checkpoint*` tables at start.
 
+## Rates watch (`watch.py`)
+
+Weekly (`RATES_WATCH_CRON`, default Monday 06:00) and on demand from the Veille page.
+
+1. Fetches every `source_url` of the rate table; extracts the main text (trafilatura).
+2. **Without AI**: stores a hash per page; a changed page raises a `source_changed` proposal
+   listing the rates that cite it. Checks npm for a newer `modele-social`.
+3. **With AI**: chunks the page into `agent_knowledge` (pgvector), retrieves the passages closest
+   to each rate, and asks the fast model for the value **with a verbatim quote**. Two
+   deterministic guards reject the reading unless the quote is found word for word in the page
+   and the proposed number appears in the quote.
+4. A `rate_change` proposal carries the JSON patch (new value, today's `verified_on`). Approving
+   it does **not** change the running engine: the patch is applied to
+   `packages/engine/rates/<year>.json` and the engine tests (Urssaf oracle) must pass.
+
+Known limit: urssaf.fr and autoentrepreneur.urssaf.fr reset non-browser clients; those sources
+are reported as unreachable and must be checked by hand (a headless browser could be added).
+
 ## Services (docker compose)
 
 | Service        | Command                         | Network                    |

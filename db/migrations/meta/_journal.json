@@ -29,6 +29,13 @@
       "when": 1791900453897,
       "tag": "0003_agent",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791902598995,
+      "tag": "0004_rates_watch",
+      "breakpoints": true
     }
   ]
 }

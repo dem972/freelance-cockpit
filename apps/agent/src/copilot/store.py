@@ -70,18 +70,23 @@ class Store:
             )
 
     def search(
-        self, embedding: list[float], limit: int = 5, kinds: list[str] | None = None
+        self,
+        embedding: list[float],
+        limit: int = 5,
+        kinds: list[str] | None = None,
+        url: str | None = None,
     ) -> list[KnowledgeHit]:
         with self.pool.connection() as conn:
             rows = conn.execute(
                 """
                 select kind, ref, content, metadata, embedding <=> %s::vector as distance
                 from agent_knowledge
-                where %s::text[] is null or kind = any(%s::text[])
+                where (%s::text[] is null or kind = any(%s::text[]))
+                  and (%s::text is null or metadata->>'url' = %s)
                 order by embedding <=> %s::vector
                 limit %s
                 """,
-                (embedding, kinds, kinds, embedding, limit),
+                (embedding, kinds, kinds, url, url, embedding, limit),
             ).fetchall()
         return [
             KnowledgeHit(
@@ -125,6 +130,17 @@ class Store:
                 (kind, kind, status, status),
             ).fetchall()
         return [dict(r) for r in rows]
+
+    def has_pending_proposal(self, kind: str, payload_subset: dict[str, Any]) -> bool:
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                """
+                select 1 from agent_proposals
+                where kind = %s and status = 'pending' and payload @> %s limit 1
+                """,
+                (kind, Jsonb(payload_subset)),
+            ).fetchone()
+        return row is not None
 
     def get_proposal(self, proposal_id: int) -> dict[str, Any] | None:
         with self.pool.connection() as conn:
@@ -174,3 +190,62 @@ class Store:
                 (report_id,),
             ).fetchone()
         return dict(row) if row is not None else None
+
+    # --- rates watch ---------------------------------------------------------------
+    def source_hash(self, url: str) -> str | None:
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                "select content_hash from source_checks where url = %s", (url,)
+            ).fetchone()
+        return None if row is None or row["content_hash"] is None else str(row["content_hash"])
+
+    def save_source_check(
+        self, url: str, digest: str | None, status: str, detail: str | None
+    ) -> None:
+        with self.pool.connection() as conn:
+            conn.execute(
+                """
+                insert into source_checks (url, content_hash, status, detail, checked_at)
+                values (%s, %s, %s, %s, now())
+                on conflict (url) do update set
+                  content_hash = coalesce(excluded.content_hash, source_checks.content_hash),
+                  status = excluded.status, detail = excluded.detail, checked_at = now()
+                """,
+                (url, digest, status, detail),
+            )
+
+    def list_source_checks(self) -> list[dict[str, Any]]:
+        with self.pool.connection() as conn:
+            rows = conn.execute(
+                """
+                select url, status, detail, checked_at::text as checked_at
+                from source_checks order by url
+                """
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def start_run(self) -> int:
+        with self.pool.connection() as conn:
+            row = conn.execute(
+                "insert into rates_watch_runs default values returning id"
+            ).fetchone()
+        assert row is not None
+        return int(row["id"])
+
+    def finish_run(self, run_id: int, summary: dict[str, Any]) -> None:
+        with self.pool.connection() as conn:
+            conn.execute(
+                "update rates_watch_runs set finished_at = now(), summary = %s where id = %s",
+                (Jsonb(summary), run_id),
+            )
+
+    def list_runs(self, limit: int = 10) -> list[dict[str, Any]]:
+        with self.pool.connection() as conn:
+            rows = conn.execute(
+                """
+                select id, started_at::text as started_at, finished_at::text as finished_at, summary
+                from rates_watch_runs order by started_at desc limit %s
+                """,
+                (limit,),
+            ).fetchall()
+        return [dict(r) for r in rows]

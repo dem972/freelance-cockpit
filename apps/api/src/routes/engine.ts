@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { monthsFromTjm } from "@fc/engine";
-import { compareStatuts } from "@fc/engine/societe";
+import { compareStatuts, MODELE_SOCIAL_VERSION } from "@fc/engine/societe";
 import { getRateTable } from "@fc/engine";
 import { DEFAULT_SETTINGS, Settings, type Cents } from "@fc/shared";
 import { parse, yearParam } from "../http.js";
@@ -39,7 +39,7 @@ export function engineRoutes() {
   app.get("/rates", (c) => {
     const year = yearParam(c.req.query("year"), 2026);
     try {
-      return c.json(getRateTable(year));
+      return c.json({ ...getRateTable(year), modeleSocialVersion: MODELE_SOCIAL_VERSION });
     } catch {
       return c.json({ error: "no rate table for this year" }, 404);
     }

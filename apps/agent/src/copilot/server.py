@@ -149,6 +149,40 @@ def create_app(deps_factory: Callable[[], Deps], verify: Callable[[Request], str
     def new_report(body: ReportIn, d: Deps = Depends(deps)) -> dict[str, str]:  # noqa: B008
         return {"task_id": d.enqueue("copilot.monthly_report", {"period": body.period})}
 
+    @app.post("/agent/rates-watch", dependencies=[Depends(auth)])
+    def start_watch(d: Deps = Depends(deps)) -> dict[str, str]:  # noqa: B008
+        return {"task_id": d.enqueue("copilot.rates_watch", {})}
+
+    @app.get("/agent/rates-watch", dependencies=[Depends(auth)])
+    def watch_state(d: Deps = Depends(deps)) -> dict[str, Any]:  # noqa: B008
+        if d.store is None:
+            return {"runs": [], "sources": []}
+        return {"runs": d.store.list_runs(), "sources": d.store.list_source_checks()}
+
+    @app.get("/agent/proposals", dependencies=[Depends(auth)])
+    def proposals(
+        kind: str | None = None,
+        status: str | None = None,
+        d: Deps = Depends(deps),  # noqa: B008
+    ) -> list[dict[str, Any]]:
+        if d.store is None:
+            return []
+        rows = d.store.list_proposals(kind=kind, status=status)
+        # Chat write actions are an audit log, not something to review here.
+        return [r for r in rows if r["kind"] != "write_action"] if kind is None else rows
+
+    @app.post("/agent/proposals/{proposal_id}/decision", dependencies=[Depends(auth)])
+    def decide(proposal_id: int, body: ResumeIn, d: Deps = Depends(deps)) -> dict[str, Any]:  # noqa: B008
+        found = d.store.get_proposal(proposal_id) if d.store is not None else None
+        if found is None or d.store is None:
+            raise HTTPException(status_code=404, detail="Proposition introuvable.")
+        if found["status"] != "pending":
+            raise HTTPException(status_code=409, detail="Déjà traitée.")
+        if found["kind"] == "write_action":
+            raise HTTPException(status_code=400, detail="Les écritures se valident dans le chat.")
+        d.store.decide_proposal(proposal_id, "approved" if body.approved else "rejected")
+        return {**found, "status": "approved" if body.approved else "rejected"}
+
     @app.post("/agent/knowledge/reindex", dependencies=[Depends(auth)])
     def reindex(d: Deps = Depends(deps)) -> dict[str, str]:  # noqa: B008
         return {"task_id": d.enqueue("copilot.index_knowledge", {})}
