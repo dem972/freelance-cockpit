@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { createLocalJWKSet, exportJWK, generateKeyPair, SignJWT, type CryptoKey } from "jose";
 import { createApp } from "./app.js";
-import { cloudflareAccess } from "./auth.js";
+import { cloudflareAccess, serviceTokenOr } from "./auth.js";
 
 const TEAM = "myteam.cloudflareaccess.com";
 const AUD = "aud-tag-123";
@@ -87,5 +87,21 @@ describe("Cloudflare Access JWT", () => {
       JSON.stringify({ email: "me@example.com", aud: AUD, iss: `https://${TEAM}` }),
     ).toString("base64url");
     expect((await get("/api/whoami", `${header}.${body}.`)).status).toBe(401);
+  });
+});
+
+describe("service token", () => {
+  const TOKEN = "x".repeat(40);
+  const svc = createApp({
+    pingDb: () => Promise.resolve(true),
+    auth: serviceTokenOr(TOKEN, (c) => Promise.resolve(c.json({ error: "unauthenticated" }, 401))),
+  });
+
+  it("accepts the exact bearer token and rejects anything else", async () => {
+    const ok = await svc.request("/api/rates", { headers: { Authorization: `Bearer ${TOKEN}` } });
+    expect(ok.status).toBe(200);
+    const bad = await svc.request("/api/rates", { headers: { Authorization: `Bearer ${TOKEN}y` } });
+    expect(bad.status).toBe(401);
+    expect((await svc.request("/api/rates")).status).toBe(401);
   });
 });

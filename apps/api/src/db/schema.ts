@@ -12,6 +12,8 @@ import {
   text,
   timestamp,
   unique,
+  index,
+  vector,
 } from "drizzle-orm/pg-core";
 
 // All amounts are bigint cents, read as JS numbers (safe up to 2^53 cents).
@@ -116,4 +118,56 @@ export const balanceSnapshots = pgTable("balance_snapshots", {
 export const alertDismissals = pgTable("alert_dismissals", {
   key: text("key").primaryKey(),
   dismissedAt: timestamp("dismissed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// --- Copilot (apps/agent) ---------------------------------------------------
+
+/** Embedding size of the configured OpenAI model (text-embedding-3-small). */
+export const EMBEDDING_DIMENSIONS = 1536;
+
+/**
+ * Knowledge the agents retrieve by similarity: sourced rates, engine
+ * assumptions, official page extracts, facts the user asked to remember.
+ */
+export const agentKnowledge = pgTable(
+  "agent_knowledge",
+  {
+    id: serial("id").primaryKey(),
+    /** rate | assumption | source_extract | memory | report */
+    kind: text("kind").notNull(),
+    /** Natural key to replace an entry on re-indexing (e.g. the rate key). */
+    ref: text("ref").notNull(),
+    content: text("content").notNull(),
+    metadata: jsonb("metadata").notNull().default({}),
+    embedding: vector("embedding", { dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique("agent_knowledge_kind_ref").on(t.kind, t.ref),
+    index("agent_knowledge_embedding").using("hnsw", t.embedding.op("vector_cosine_ops")),
+  ],
+);
+
+/** What the agents propose; nothing is written before the user approves. */
+export const agentProposals = pgTable("agent_proposals", {
+  id: serial("id").primaryKey(),
+  /** write_action | rate_change | dependency_update */
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  payload: jsonb("payload").notNull(),
+  /** pending | approved | rejected | applied */
+  status: text("status").notNull().default("pending"),
+  threadId: text("thread_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
+});
+
+/** Reports written by the agents (markdown), with the figures they used. */
+export const agentReports = pgTable("agent_reports", {
+  id: serial("id").primaryKey(),
+  period: text("period").notNull(),
+  title: text("title").notNull(),
+  markdown: text("markdown").notNull(),
+  data: jsonb("data").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

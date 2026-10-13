@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import type { HealthResponse, IsoDate } from "@fc/shared";
 import type { Db } from "./db.js";
 import { cockpitRoutes } from "./routes/cockpit.js";
+import { engineRoutes } from "./routes/engine.js";
 import { ledgerRoutes } from "./routes/ledger.js";
 
 export interface AppDeps {
@@ -33,6 +34,8 @@ export function createApp(deps: AppDeps) {
   // Registered after /health, so the healthcheck stays open (it exposes no
   // data) and every route below requires authentication.
   if (deps.auth !== undefined) app.use("*", deps.auth);
+
+  app.route("/", engineRoutes());
 
   if (deps.db !== undefined) {
     const today = deps.today ?? (() => new Date().toISOString().slice(0, 10));

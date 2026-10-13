@@ -33,6 +33,13 @@
   en clair et en sombre. Toute nouvelle couleur de série doit repasser le validateur.
 - Polices système uniquement (pas de requête vers un service de polices tiers).
 
+## Agents (apps/agent, Python)
+
+- LangGraph + Celery + pgvector, OpenAI. Voir `apps/agent/README.md`.
+- L'IA n'invente aucun chiffre : tout montant vient de l'API (moteur). Toute écriture passe par
+  `interrupt()` et la validation de l'utilisateur.
+- `mypy --strict`, ruff, pytest ; dépendances via `uv.lock` avec `exclude-newer`.
+
 ## Commandes
 
 ```sh

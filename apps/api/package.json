@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.9",
+    "@electric-sql/pglite-pgvector": "0.0.9",
     "drizzle-kit": "0.31.11",
     "esbuild": "0.28.2",
     "tsx": "4.23.15"

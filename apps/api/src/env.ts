@@ -11,6 +11,8 @@ const Env = z
     CF_ACCESS_AUD: z.string().optional(),
     /** Comma-separated. */
     ALLOWED_EMAILS: z.string().optional(),
+    /** Shared secret for the internal agent service (≥ 32 chars), optional. */
+    AGENT_API_TOKEN: z.string().min(32).optional(),
   })
   .refine(
     (e) =>

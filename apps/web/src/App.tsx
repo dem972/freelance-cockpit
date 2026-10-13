@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import type { Alert } from "@fc/engine/cockpit";
 import { AlertsBell } from "@/components/alerts";
 import { DEMO, OUTILS, PILOTAGE, AppSidebar } from "@/components/app-sidebar";
+import { CopilotButton } from "@/components/copilot";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -60,8 +61,9 @@ export function App() {
             <span className="ml-auto hidden text-xs text-muted-foreground md:inline">
               Estimations indicatives, sans valeur de conseil fiscal
             </span>
-            <div className="ml-auto md:ml-2">
+            <div className="ml-auto flex items-center gap-2 md:ml-2">
               <AlertsBell alerts={alerts.data ?? []} reload={alerts.reload} />
+              <CopilotButton />
             </div>
           </header>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6">

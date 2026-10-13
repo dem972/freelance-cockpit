@@ -60,5 +60,13 @@ export function useApi<T>(url: string) {
   const reload = useCallback(() => {
     setVersion((v) => v + 1);
   }, []);
+
+  // Refetch when the copilot (or anything else) reports a data change.
+  useEffect(() => {
+    window.addEventListener("fc:data-changed", reload);
+    return () => {
+      window.removeEventListener("fc:data-changed", reload);
+    };
+  }, [reload]);
   return { data, error, reload };
 }

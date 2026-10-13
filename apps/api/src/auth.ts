@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import type { MiddlewareHandler } from "hono";
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 
@@ -39,5 +40,23 @@ export function cloudflareAccess(config: AccessConfig): MiddlewareHandler {
       return c.json({ error: "unauthenticated" }, 401);
     }
     await next();
+  };
+}
+
+/**
+ * Lets the internal agent service call the API with a shared secret
+ * (`Authorization: Bearer …`), then falls back to `next` (Cloudflare Access).
+ * nginx strips Authorization on public requests, so only containers on the
+ * internal network can present it.
+ */
+export function serviceTokenOr(token: string, fallback: MiddlewareHandler): MiddlewareHandler {
+  const expected = Buffer.from(`Bearer ${token}`);
+  return async (c, next) => {
+    const given = Buffer.from(c.req.header("Authorization") ?? "");
+    if (given.length === expected.length && timingSafeEqual(given, expected)) {
+      await next();
+      return;
+    }
+    return fallback(c, next);
   };
 }

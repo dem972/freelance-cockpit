@@ -1,13 +1,15 @@
 name: finance-cockpit
 
-# backend: internal only, db and api have no route to the outside world.
-# edge:    web, and cloudflared which dials out to Cloudflare.
-# egress:  backup, which uploads to the remote bucket.
+# backend:      internal only, db, api and redis have no route to the outside world.
+# edge:         web, and cloudflared which dials out to Cloudflare.
+# egress:       backup, which uploads to the remote bucket.
+# agent-egress: agent services, which call OpenAI and fetch official sources.
 networks:
   backend:
     internal: true
   edge: {}
   egress: {}
+  agent-egress: {}
 
 volumes:
   pgdata: {}
@@ -15,7 +17,8 @@ volumes:
 
 services:
   db:
-    image: postgres:16.10-alpine
+    # Postgres 16 + pgvector (embeddings for the agents).
+    image: pgvector/pgvector:0.8.6-pg16
     restart: unless-stopped
     environment:
       POSTGRES_DB: cockpit
@@ -43,6 +46,7 @@ services:
       CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
       CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
       ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      AGENT_API_TOKEN: ${AGENT_API_TOKEN:-}
     networks: [backend]
     depends_on:
       db:
@@ -60,6 +64,91 @@ services:
     networks: [backend, edge]
     depends_on:
       api:
+        condition: service_healthy
+
+  # --- Agents: copilot, reports, rates watch (Python, LangGraph + Celery) ----
+
+  redis:
+    # Celery broker only (no business data); not persisted, internal network.
+    image: redis:8.8.3-alpine
+    restart: unless-stopped
+    read_only: true
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  agent:
+    build: &agent-build
+      context: ..
+      dockerfile: infra/Dockerfile.agent
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    environment: &agent-env
+      AGENT_DATABASE_URL: postgresql://cockpit:${POSTGRES_PASSWORD}@db:5432/cockpit
+      REDIS_URL: redis://redis:6379/0
+      API_URL: http://api:3000/api
+      AGENT_API_TOKEN: ${AGENT_API_TOKEN:?set AGENT_API_TOKEN (openssl rand -hex 32)}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6.1-sol}
+      OPENAI_MODEL_FAST: ${OPENAI_MODEL_FAST:-gpt-6-luna}
+      OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      AUTH_MODE: ${AUTH_MODE}
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
+      RATES_WATCH_CRON: ${RATES_WATCH_CRON:-0 6 * * 1}
+      TZ: ${TZ:-Europe/Paris}
+    networks: [backend, agent-egress]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  agent-worker:
+    build: *agent-build
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    command: ["celery", "-A", "copilot.tasks", "worker", "--loglevel=INFO", "--concurrency=2"]
+    environment: *agent-env
+    networks: [backend, agent-egress]
+    healthcheck:
+      disable: true
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  agent-beat:
+    build: *agent-build
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    command:
+      [
+        "celery",
+        "-A",
+        "copilot.tasks",
+        "beat",
+        "--loglevel=INFO",
+        "--schedule",
+        "/tmp/celerybeat-schedule",
+      ]
+    environment: *agent-env
+    networks: [backend]
+    healthcheck:
+      disable: true
+    depends_on:
+      redis:
         condition: service_healthy
 
   # --- Production profile: `docker compose --profile prod up -d` -----------

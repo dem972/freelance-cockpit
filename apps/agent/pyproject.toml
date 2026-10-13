@@ -1,0 +1,64 @@
+[project]
+name = "copilot"
+version = "0.0.0"
+description = "Finance Cockpit agents: copilot chat, reports, rates watch (LangGraph + Celery)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  # Agent graphs with human-in-the-loop interrupts and Postgres checkpoints.
+  "langgraph==1.2.12",
+  "langgraph-checkpoint-postgres==3.1.2",
+  # OpenAI chat (Responses API) and embeddings through LangChain's tool interface.
+  "langchain-openai==1.6.6",
+  "langchain-core==1.6.6",
+  # HTTP service for the web app (chat, approvals, reports).
+  "fastapi==0.142.1",
+  "uvicorn==0.54.0",
+  # Background and scheduled tasks (weekly rates watch, monthly report).
+  "celery[redis]==5.6.3",
+  # Postgres + pgvector.
+  "psycopg[binary,pool]==3.3.6",
+  "pgvector==0.5.0",
+  # Calls to the TypeScript API and to official sources.
+  "httpx==0.28.1",
+  # Cloudflare Access JWT verification (same rules as the API).
+  "pyjwt[crypto]==2.15.1",
+  "pydantic-settings==2.15.0",
+  # Main text of official web pages, for the rates watch.
+  "trafilatura==2.2.0",
+]
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "ruff==0.16.9", "mypy==2.3.1"]
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/copilot"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
+ignore = ["S101"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+mypy_path = "src"
+packages = ["copilot"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "trafilatura.*", "pgvector.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs a Postgres with pgvector (DATABASE_URL)"]
+
+[tool.uv]
+# Supply-chain cooldown: nothing published in the last two weeks, transitive deps included.
+exclude-newer = "2026-09-30T00:00:00Z"
