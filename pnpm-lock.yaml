@@ -94,13 +94,13 @@ importers:
       '@fc/shared':
         specifier: workspace:*
         version: link:../shared
-    devDependencies:
       modele-social:
         specifier: 11.1.0
         version: 11.1.0(publicodes@1.10.4)
       publicodes:
         specifier: 1.10.4
         version: 1.10.4
+    devDependencies:
       vitest:
         specifier: 5.0.4
         version: 5.0.4(@types/node@26.6.5)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.28.2)(tsx@4.23.15))

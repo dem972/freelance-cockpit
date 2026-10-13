@@ -39,7 +39,8 @@ export type WarningCode =
   | "vl_rfr_trop_eleve"
   | "vl_changement_en_cours_annee"
   | "statut_non_micro"
-  | "estimation_bareme";
+  | "estimation_bareme"
+  | "estimation_dividendes_tns";
 
 export interface EngineWarning {
   code: WarningCode;
@@ -70,4 +71,6 @@ export interface Breakdown {
   rates: UsedRate[];
   warnings: EngineWarning[];
   assumptions: string[];
+  /** Statut-specific amounts (IS, dividendes, rémunération imposable…). */
+  details?: Record<string, Cents> | undefined;
 }

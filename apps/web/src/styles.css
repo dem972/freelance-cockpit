@@ -288,3 +288,44 @@ td:first-child {
 .error {
   color: var(--danger);
 }
+.compare {
+  display: grid;
+  gap: 8px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.compare-row.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.compare-net {
+  font-weight: 700;
+  text-align: right;
+}
+.mini-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--border);
+}
+.mini-bar span {
+  height: 100%;
+}
+.pending {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+input[type="range"] {
+  padding: 0;
+}

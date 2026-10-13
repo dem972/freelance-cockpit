@@ -4,17 +4,18 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./societe": "./src/societe.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@fc/shared": "workspace:*"
+    "@fc/shared": "workspace:*",
+    "modele-social": "11.1.0",
+    "publicodes": "1.10.4"
   },
   "devDependencies": {
-    "modele-social": "11.1.0",
-    "publicodes": "1.10.4",
     "vitest": "5.0.4"
   }
 }

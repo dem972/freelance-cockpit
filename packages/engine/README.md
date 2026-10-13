@@ -52,6 +52,27 @@ The list is exported as `MICRO_ASSUMPTIONS` and shown in the UI. In addition:
 - `micro.vl.plafond_rfr_par_part` is flagged `conflict`: service-public gives 29 579 €,
   modele-social 11.1.0 gives 29 315 €.
 
+## EURL IR, EURL IS, SASU, portage (J3)
+
+Entry point: `@fc/engine/societe` (`computeSociete`, `computeStatut`, `compareStatuts`), kept
+separate so the Micro-BNC path does not load the rules.
+
+- Social contributions, IS, dividend prélèvements and taxable income come from **modele-social
+  11.1.0**, the official Urssaf rules behind mon-entreprise.urssaf.fr (MIT, pure in-memory). Hand
+  coding the ~60 TNS and payroll rates would be less reliable than using Urssaf's own model. The
+  rates shown for these statuts carry the rule's official reference and the package publication
+  date (16/07/2026) as `verified_on`.
+- Income tax uses this engine's barème, marginal on the household, as for Micro-BNC.
+- EURL IS / SASU: `partRemuneration` of (CA − charges) is the dirigeant's total pay cost; the
+  rest, after IS, is distributed. Dividend tax = the cheaper of PFU and barème.
+- EURL IS: modele-social does not charge TNS contributions on dividends above 10 % of capital +
+  comptes courants. We estimate them as the extra contributions of a gérant whose net pay would
+  grow by that excess (`estimation_dividendes_tns` warning).
+- Portage: the enveloppe (CA − frais de gestion − frais pro) is the total employer cost of a
+  salaried cadre. Returned as a **fourchette** over frais de gestion of 5 % to 10 % (market
+  practice, not a regulated rate; the user's own value is the central figure).
+- Annual computation with the settings of 1 January, spread over months pro rata of CA.
+
 ## Tests
 
 - Unit tests on the examples published by the sources (Acre end dates, barème, décote, plafond du

@@ -34,6 +34,8 @@ export const Settings = z.object({
   autresRevenusImposables: Cents,
   /** EURL IS / SASU : part du résultat versée en rémunération (0..1), le reste en dividendes. */
   partRemuneration: z.number().min(0).max(1),
+  /** EURL IS : capital social + comptes courants d'associé (seuil des 10 % sur les dividendes). */
+  capitalEtComptesCourants: Cents,
   /** Portage : frais de gestion de la société de portage (0..1). */
   fraisGestionPortage: z.number().min(0).max(0.3),
 });
@@ -66,6 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   situationFamiliale: "seul",
   parts: 1,
   autresRevenusImposables: 0 as Cents,
-  partRemuneration: 1,
+  partRemuneration: 0.6,
+  capitalEtComptesCourants: 100000 as Cents,
   fraisGestionPortage: 0.07,
 };

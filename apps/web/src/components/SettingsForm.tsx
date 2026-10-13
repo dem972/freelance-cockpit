@@ -96,6 +96,50 @@ export function SettingsForm({ value: s, onChange }: Props) {
           }}
         />
       </Field>
+      <Field
+        label={`EURL IS / SASU : part en rémunération (${String(Math.round(s.partRemuneration * 100))} %)`}
+        hint="Le reste du résultat, après IS, est versé en dividendes"
+      >
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={s.partRemuneration}
+          onChange={(e) => {
+            set("partRemuneration", Number(e.target.value));
+          }}
+        />
+      </Field>
+      <Field
+        label="EURL IS : capital + comptes courants (€)"
+        hint="Seuil des 10 % sur les dividendes"
+      >
+        <input
+          type="number"
+          min={0}
+          step={100}
+          value={s.capitalEtComptesCourants / 100}
+          onChange={(e) => {
+            set(
+              "capitalEtComptesCourants",
+              Math.round(Number(e.target.value) * 100) as Settings["capitalEtComptesCourants"],
+            );
+          }}
+        />
+      </Field>
+      <Field label="Portage : frais de gestion (%)" hint="Ceux de ton contrat">
+        <input
+          type="number"
+          min={0}
+          max={30}
+          step={0.5}
+          value={Math.round(s.fraisGestionPortage * 1000) / 10}
+          onChange={(e) => {
+            set("fraisGestionPortage", Number(e.target.value) / 100);
+          }}
+        />
+      </Field>
     </div>
   );
 }
