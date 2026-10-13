@@ -1,4 +1,5 @@
 import type { CockpitData } from "@fc/engine/cockpit";
+import { AcreCard } from "../components/AcreCard.js";
 import { BreakdownBar } from "../components/BreakdownBar.js";
 import { CoverageRing } from "../components/CoverageRing.js";
 import { ErrorText } from "../components/ErrorText.js";
@@ -71,6 +72,10 @@ export function CockpitView({ data }: { data: CockpitData }) {
           <Warnings warnings={data.projected.warnings} />
         </section>
       </div>
+
+      {data.projected.acre !== undefined && (
+        <AcreCard acre={data.projected.acre} asOf={data.asOf} />
+      )}
 
       <MonthlyChart data={monthly} title="CA HT par mois : réalisé et prévisionnel" />
 

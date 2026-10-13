@@ -73,6 +73,17 @@ separate so the Micro-BNC path does not load the rules.
   practice, not a regulated rate; the user's own value is the central figure).
 - Annual computation with the settings of 1 January, spread over months pro rata of CA.
 
+## Calendrier et Acre (J6)
+
+- `joursFeries(year)`: the 11 public holidays of metropolitan France (Code du travail
+  L3133-1, Easter computed); Alsace-Moselle days are not included.
+- `joursPrevus(projection)`: in calendar mode, working days minus days off taken on working
+  days. Saving the projection recomputes provisions and the projected net.
+- `Breakdown.acre`: end date, month it runs out, savings over the year. Micro: reduced rate until
+  the end of the 3rd calendar quarter after the start (Urssaf). Companies: 12-month exemption,
+  full under 75 % of the PASS and degressive up to 100 % (computed by modele-social, savings =
+  contributions without Acre − with Acre). Portage: never (the consultant is an employee).
+
 ## Tests
 
 - Unit tests on the examples published by the sources (Acre end dates, barème, décote, plafond du

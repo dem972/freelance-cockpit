@@ -1,5 +1,5 @@
 import type { Cents, Settings } from "@fc/shared";
-import { acreActiveInMonth } from "./acre.js";
+import { acreActiveInMonth, acreEndDate } from "./acre.js";
 import { monthEnd, monthStart } from "./dates.js";
 import { impotRevenu } from "./ir.js";
 import { applyRate, sum } from "./money.js";
@@ -165,6 +165,36 @@ export function computeMicroBnc(input: YearInput): Breakdown {
     });
   }
 
+  // Acre: end date and savings vs the full rate.
+  let acre: Breakdown["acre"];
+  const acreMonths = months.filter((m) => m.acre);
+  const debutAcre = acreMonths.length > 0 ? fin.acreDebutActivite : null;
+  if (debutAcre !== null) {
+    const finAcre = acreEndDate(debutAcre);
+    const economie = sum(
+      acreMonths.map((m) => {
+        const s = settingsAt(input.timeline, monthStart(year, m.month));
+        const plein = rates.rate(`micro.cotisations.bnc.${s.caisse}`);
+        return applyRate(m.ca, plein) - m.cotisations;
+      }),
+    );
+    acre = {
+      debutActivite: debutAcre,
+      fin: finAcre,
+      moisEpuisement: finAcre.slice(0, 7),
+      economie,
+      regle:
+        "Auto-entrepreneur : taux réduit jusqu'à la fin du 3e trimestre civil suivant le début d'activité.",
+    };
+    if (finAcre <= monthEnd(year, 12)) {
+      warnings.push({
+        code: "acre_fin",
+        month: Number(finAcre.slice(5, 7)),
+        message: `Fin de l'Acre le ${finAcre} : taux plein ensuite.`,
+      });
+    }
+  }
+
   const cotisations = sum(months.map((m) => m.cotisations));
   const cfp = sum(months.map((m) => m.cfp));
   const impot = sum(months.map((m) => m.impot));
@@ -186,5 +216,6 @@ export function computeMicroBnc(input: YearInput): Breakdown {
     rates: rates.usedRates(),
     warnings,
     assumptions: MICRO_ASSUMPTIONS,
+    acre,
   };
 }

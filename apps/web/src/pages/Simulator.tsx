@@ -6,6 +6,7 @@ import {
   type Settings,
   type Statut,
 } from "@fc/shared";
+import { AcreCard } from "../components/AcreCard.js";
 import { BreakdownBar } from "../components/BreakdownBar.js";
 import { Field } from "../components/Field.js";
 import { RatesPanel } from "../components/RatesPanel.js";
@@ -156,6 +157,9 @@ export function Simulator() {
             </div>
           </section>
 
+          {result.acre !== undefined && (
+            <AcreCard acre={result.acre} asOf={new Date().toISOString().slice(0, 10)} />
+          )}
           <RatesPanel rates={result.rates} />
 
           <section className="card">

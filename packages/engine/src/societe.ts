@@ -7,6 +7,7 @@
 import rules from "modele-social";
 import Engine from "publicodes";
 import type { Cents, Settings, Statut, UsedRate } from "@fc/shared";
+import { acreEndDate12Mois } from "./acre.js";
 import { monthEnd, monthStart } from "./dates.js";
 import { impotRevenu } from "./ir.js";
 import { computeMicroBnc } from "./micro.js";
@@ -278,13 +279,14 @@ export function computeSociete(input: YearInput, statut: SocieteStatut): Breakdo
 
   const run = (
     fraisGestion: number,
+    situation: Situation = base,
   ): { annual: Annual; impot: number; net: number; fraisGestionCents: number } => {
     const annual =
       statut === "eurl_ir"
-        ? eurlIr(base, ca, fraisPro)
+        ? eurlIr(situation, ca, fraisPro)
         : statut === "portage"
-          ? portage(base, ca, fraisPro, fraisGestion)
-          : societeIs(base, statut, ca, fraisPro, debut);
+          ? portage(situation, ca, fraisPro, fraisGestion)
+          : societeIs(situation, statut, ca, fraisPro, debut);
     const autres = fin.autresRevenusImposables;
     const sansActivite = impotRevenu(autres, fin, rates);
     const irActivite =
@@ -317,6 +319,48 @@ export function computeSociete(input: YearInput, statut: SocieteStatut): Breakdo
   const impot = Math.round(main.impot) as Cents;
 
   const warnings: EngineWarning[] = [...annual.warnings];
+
+  // Acre (not for portage: the consultant is an employee of the portage company).
+  let acre: Breakdown["acre"];
+  const debutAcre = debut.acreDebutActivite;
+  if (
+    statut !== "portage" &&
+    base["dirigeant . exonérations . ACRE"] === "oui" &&
+    debutAcre !== null
+  ) {
+    const sansAcre = run(debut.fraisGestionPortage, {
+      ...base,
+      "dirigeant . exonérations . ACRE": "non",
+    });
+    const economie = Math.max(
+      0,
+      Math.round(
+        sansAcre.annual.cotisations + sansAcre.annual.dividendesPrelevements - cotisations,
+      ),
+    ) as Cents;
+    const finAcre = acreEndDate12Mois(debutAcre);
+    acre = {
+      debutActivite: debutAcre,
+      fin: finAcre,
+      moisEpuisement: finAcre.slice(0, 7),
+      economie,
+      regle:
+        "Exonération de 12 mois, totale sous 75 % du plafond de la sécurité sociale puis dégressive jusqu'à 100 % (calcul modele-social).",
+    };
+    if (finAcre <= monthEnd(year, 12)) {
+      warnings.push({
+        code: "acre_fin",
+        month: Number(finAcre.slice(5, 7)),
+        message: `Fin de l'Acre le ${finAcre}.`,
+      });
+    }
+    if (economie === 0) {
+      warnings.push({
+        code: "acre_fin",
+        message: "Acre sans effet : revenu au-delà du plafond de l'exonération.",
+      });
+    }
+  }
   const assumptions = [
     ...annual.assumptions,
     "Calcul annuel avec les réglages au 1er janvier (situation familiale au 31 décembre), réparti sur les mois au prorata du CA.",
@@ -366,6 +410,7 @@ export function computeSociete(input: YearInput, statut: SocieteStatut): Breakdo
     rates: [...rates.usedRates(), ...annual.rates],
     warnings,
     assumptions,
+    acre,
     details: {
       remunerationImposable: Math.round(annual.revenuImposable) as Cents,
       is: Math.round(annual.is) as Cents,

@@ -40,12 +40,25 @@ export type WarningCode =
   | "vl_changement_en_cours_annee"
   | "statut_non_micro"
   | "estimation_bareme"
-  | "estimation_dividendes_tns";
+  | "estimation_dividendes_tns"
+  | "acre_fin";
 
 export interface EngineWarning {
   code: WarningCode;
   message: string;
   month?: number;
+}
+
+/** Acre: when it ends and what it saves over the year. */
+export interface AcreSummary {
+  debutActivite: string;
+  /** Last day of the reduced rate. */
+  fin: string;
+  /** Month the reduction runs out ("YYYY-MM"). */
+  moisEpuisement: string;
+  /** Contributions saved during this year thanks to the Acre. */
+  economie: Cents;
+  regle: string;
 }
 
 /** Low/high bounds, for statuts that cannot be modelled to the euro. */
@@ -71,6 +84,7 @@ export interface Breakdown {
   rates: UsedRate[];
   warnings: EngineWarning[];
   assumptions: string[];
+  acre?: AcreSummary | undefined;
   /** Statut-specific amounts (IS, dividendes, rémunération imposable…). */
   details?: Record<string, Cents> | undefined;
 }

@@ -20,3 +20,10 @@ export function acreActiveInMonth(debutActivite: IsoDate, year: number, month: n
   const first = `${String(year)}-${String(month).padStart(2, "0")}-01`;
   return debutActivite <= monthEnd(year, month) && first <= acreEndDate(debutActivite);
 }
+
+/** Last day of a 12-month exemption (Acre outside micro): start + 1 year − 1 day. */
+export function acreEndDate12Mois(debutActivite: IsoDate): IsoDate {
+  const { year, month, day } = parseIso(debutActivite);
+  const d = new Date(Date.UTC(year + 1, month - 1, day - 1));
+  return d.toISOString().slice(0, 10);
+}

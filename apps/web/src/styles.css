@@ -566,3 +566,15 @@ button.day.off {
   padding: 8px 12px;
   font-size: 14px;
 }
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+  margin: 8px 0 4px;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}

@@ -16,6 +16,7 @@ export function useCompare(input: YearInput) {
   const worker = useRef<Worker | null>(null);
   const keys = useRef(new Map<number, string>());
   const lastId = useRef(0);
+  const answered = useRef(false);
   const [done, setDone] = useState<Done>({ key: "", result: null, error: null });
   const key = JSON.stringify(input);
 
@@ -26,6 +27,7 @@ export function useCompare(input: YearInput) {
       if (id !== lastId.current) return;
       const doneKey = keys.current.get(id) ?? "";
       keys.current.clear();
+      answered.current = true;
       setDone((prev) =>
         event.data.ok
           ? { key: doneKey, result: event.data.result, error: null }
@@ -39,12 +41,16 @@ export function useCompare(input: YearInput) {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      lastId.current += 1;
-      keys.current.set(lastId.current, key);
-      const request: WorkerRequest = { id: lastId.current, input: JSON.parse(key) as YearInput };
-      worker.current?.postMessage(request);
-    }, 250);
+    // First computation right away; later ones debounced while typing.
+    const timer = setTimeout(
+      () => {
+        lastId.current += 1;
+        keys.current.set(lastId.current, key);
+        const request: WorkerRequest = { id: lastId.current, input: JSON.parse(key) as YearInput };
+        worker.current?.postMessage(request);
+      },
+      answered.current ? 250 : 0,
+    );
     return () => {
       clearTimeout(timer);
     };
