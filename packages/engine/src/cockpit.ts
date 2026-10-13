@@ -174,3 +174,76 @@ export function computeCockpit(input: CockpitInput): CockpitComputation {
 
   return { rateVersion: rateVersion(year), projected, realised, provisions, urssafDeadlines };
 }
+
+export interface CockpitBalance {
+  snapshotDate: IsoDate | null;
+  balance: Cents;
+  provisionsUnpaid: Cents;
+  available: Cents;
+}
+
+export interface CockpitCoverage {
+  /** balance / unpaid provisions; null when nothing is owed. */
+  ratio: number | null;
+  next: { label: string; kind: string; dueOn: IsoDate; amount: Cents } | null;
+}
+
+export interface CockpitDeadline {
+  id: number;
+  kind: string;
+  label: string;
+  dueOn: IsoDate;
+  amountDue: Cents;
+  paidOn: IsoDate | null;
+}
+
+/** Everything the cockpit screen shows, from the API or built locally in demo mode. */
+export interface CockpitData {
+  year: number;
+  asOf: IsoDate;
+  balance: CockpitBalance;
+  coverage: CockpitCoverage;
+  /** Realised months only. */
+  realised: Breakdown;
+  /** Realised months + forecast for the rest of the year. */
+  projected: Breakdown;
+  /** Forecast alone for the whole year (the plan). */
+  plan: Breakdown;
+  deadlines: CockpitDeadline[];
+}
+
+/** The plan: the projection alone over the whole year. */
+export function computePlan(
+  year: number,
+  projection: Projection | null,
+  timeline: SettingsTimeline,
+) {
+  const statut = settingsAt(timeline, monthStart(year, 1)).statut;
+  return computeStatut({ year, months: projectedMonths(projection), timeline }, statut);
+}
+
+/**
+ * Same rules as the SQL view v_available_balance, for demo mode (no database):
+ * balance = last snapshot + later movements; unpaid = provisions − payments.
+ */
+export function balanceFromLedger(
+  snapshot: { date: IsoDate; amount: Cents } | null,
+  transactions: LedgerTransaction[],
+  provisions: ProvisionLine[],
+): CockpitBalance {
+  const moves = transactions
+    .filter((t) => snapshot === null || t.date > snapshot.date)
+    .reduce((a, t) => a + t.amount, 0);
+  const provisioned = provisions.reduce((a, p) => a + p.amount, 0);
+  const paid = transactions
+    .filter((t) => t.kind === "paiement_echeance")
+    .reduce((a, t) => a - t.amount, 0);
+  const balance = (snapshot?.amount ?? 0) + moves;
+  const unpaid = Math.max(0, provisioned - paid);
+  return {
+    snapshotDate: snapshot?.date ?? null,
+    balance: balance as Cents,
+    provisionsUnpaid: unpaid as Cents,
+    available: (balance - unpaid) as Cents,
+  };
+}

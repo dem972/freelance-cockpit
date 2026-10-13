@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { HealthResponse, IsoDate } from "@fc/shared";
 import type { Db } from "./db.js";
+import { cockpitRoutes } from "./routes/cockpit.js";
 import { ledgerRoutes } from "./routes/ledger.js";
 
 export interface AppDeps {
@@ -30,6 +31,7 @@ export function createApp(deps: AppDeps) {
   if (deps.db !== undefined) {
     const today = deps.today ?? (() => new Date().toISOString().slice(0, 10));
     app.route("/", ledgerRoutes({ db: deps.db, today }));
+    app.route("/", cockpitRoutes({ db: deps.db, today }));
   }
 
   return app;

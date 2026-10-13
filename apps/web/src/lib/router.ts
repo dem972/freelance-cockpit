@@ -5,7 +5,7 @@ const ROUTES: Route[] = ["/simulateur", "/cockpit", "/saisie", "/reglages", "/de
 
 function current(): Route {
   const path = window.location.pathname;
-  return ROUTES.find((r) => path.startsWith(r)) ?? "/simulateur";
+  return ROUTES.find((r) => path.startsWith(r)) ?? "/cockpit";
 }
 
 export function navigate(route: Route) {

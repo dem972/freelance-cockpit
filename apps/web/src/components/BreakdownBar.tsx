@@ -5,8 +5,8 @@ export const SEGMENTS = [
   { key: "net", label: "Pour toi", color: "var(--c-net)" },
   { key: "cotisations", label: "Cotisations", color: "var(--c-cotis)" },
   { key: "impot", label: "Impôt", color: "var(--c-impot)" },
-  { key: "cfp", label: "CFP", color: "var(--c-cfp)" },
   { key: "fraisPro", label: "Frais pro", color: "var(--c-frais)" },
+  { key: "cfp", label: "CFP", color: "var(--c-cfp)" },
 ] as const;
 
 export function BreakdownBar({ b }: { b: Breakdown }) {
