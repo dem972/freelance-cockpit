@@ -33,8 +33,9 @@ jobs:
       - name: Start stack
         working-directory: infra
         run: |
-          printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)" > .env
+          printf 'POSTGRES_PASSWORD=%s\nAUTH_MODE=none\n' "$(openssl rand -hex 24)" > .env
           docker compose up -d --build --wait
+          docker compose --profile prod build backup
       - name: Smoke test
         run: curl -fsS http://127.0.0.1:8380/api/health
       - name: Logs on failure

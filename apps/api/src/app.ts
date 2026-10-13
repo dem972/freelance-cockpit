@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type MiddlewareHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { HealthResponse, IsoDate } from "@fc/shared";
 import type { Db } from "./db.js";
@@ -7,6 +7,8 @@ import { ledgerRoutes } from "./routes/ledger.js";
 
 export interface AppDeps {
   pingDb: () => Promise<boolean>;
+  /** Auth for every route except /api/health. Absent = no auth (tests, AUTH_MODE=none). */
+  auth?: MiddlewareHandler;
   /** Absent in health-only tests. */
   db?: Db;
   today?: () => IsoDate;
@@ -27,6 +29,10 @@ export function createApp(deps: AppDeps) {
     const body: HealthResponse = { status: up ? "ok" : "degraded", db: up ? "up" : "down" };
     return c.json(body, up ? 200 : 503);
   });
+
+  // Registered after /health, so the healthcheck stays open (it exposes no
+  // data) and every route below requires authentication.
+  if (deps.auth !== undefined) app.use("*", deps.auth);
 
   if (deps.db !== undefined) {
     const today = deps.today ?? (() => new Date().toISOString().slice(0, 10));

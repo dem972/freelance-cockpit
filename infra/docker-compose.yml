@@ -1,14 +1,17 @@
 name: finance-cockpit
 
-# `backend` is internal: db and api have no route to the outside world.
-# `edge` only carries web (and cloudflared in J7).
+# backend: internal only, db and api have no route to the outside world.
+# edge:    web, and cloudflared which dials out to Cloudflare.
+# egress:  backup, which uploads to the remote bucket.
 networks:
   backend:
     internal: true
   edge: {}
+  egress: {}
 
 volumes:
   pgdata: {}
+  backups: {}
 
 services:
   db:
@@ -36,6 +39,10 @@ services:
     environment:
       PORT: "3000"
       DATABASE_URL: postgres://cockpit:${POSTGRES_PASSWORD}@db:5432/cockpit
+      AUTH_MODE: ${AUTH_MODE:?set AUTH_MODE (access, or none for local development)}
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
+      ALLOWED_EMAILS: ${ALLOWED_EMAILS:-}
     networks: [backend]
     depends_on:
       db:
@@ -47,11 +54,58 @@ services:
       dockerfile: infra/Dockerfile.web
     restart: unless-stopped
     ports:
-      # Loopback only. Remote access goes through cloudflared + Access (J7).
+      # Loopback only. With AUTH_MODE=access the API answers 401 here: remote
+      # (and local) use goes through the tunnel and Cloudflare Access.
       - "127.0.0.1:${WEB_PORT:-8380}:8080"
     networks: [backend, edge]
     depends_on:
       api:
         condition: service_healthy
 
-  # J7: cloudflared (tunnel → web:8080) and backup (pg_dump | age → bucket).
+  # --- Production profile: `docker compose --profile prod up -d` -----------
+
+  cloudflared:
+    profiles: [prod]
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    read_only: true
+    # Remotely managed tunnel: the public hostname → http://web:8080 route and
+    # the Access application are configured in the Cloudflare dashboard.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    networks: [edge]
+    depends_on:
+      web:
+        condition: service_healthy
+
+  backup:
+    profiles: [prod]
+    build:
+      context: ..
+      dockerfile: infra/backup/Dockerfile
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: cockpit
+      PGDATABASE: cockpit
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      AGE_RECIPIENT: ${AGE_RECIPIENT:-}
+      BACKUP_AT: ${BACKUP_AT:-03:00}
+      KEEP_DAYS: ${KEEP_DAYS:-30}
+      TZ: ${TZ:-Europe/Paris}
+      RCLONE_REMOTE: ${RCLONE_REMOTE:-}
+      # rclone remote named "remote", configured from the environment (S3-compatible).
+      RCLONE_CONFIG_REMOTE_TYPE: s3
+      RCLONE_CONFIG_REMOTE_PROVIDER: ${S3_PROVIDER:-Other}
+      RCLONE_CONFIG_REMOTE_ENDPOINT: ${S3_ENDPOINT:-}
+      RCLONE_CONFIG_REMOTE_REGION: ${S3_REGION:-auto}
+      RCLONE_CONFIG_REMOTE_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_REMOTE_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_REMOTE_NO_CHECK_BUCKET: "true"
+    volumes:
+      - backups:/backups
+    networks: [backend, egress]
+    depends_on:
+      db:
+        condition: service_healthy

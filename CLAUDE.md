@@ -29,5 +29,8 @@
 pnpm install
 pnpm dev                 # api :3000 + web (Vite, proxy /api)
 pnpm lint && pnpm format:check && pnpm typecheck && pnpm test
-cd infra && cp .env.example .env && docker compose up -d --build --wait   # http://127.0.0.1:8380
+cd infra && cp .env.example .env    # AUTH_MODE=none for local development
+docker compose up -d --build --wait       # http://127.0.0.1:8380
+docker compose --profile prod up -d       # + cloudflared + backup (see infra/README.md)
+infra/backup/test-restore.sh <age-key>    # monthly restore test
 ```
