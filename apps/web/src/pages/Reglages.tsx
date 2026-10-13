@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { History, Landmark, Save, Settings2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { settingsAt } from "@fc/engine";
 import {
   STATUT_LABELS,
@@ -8,13 +10,26 @@ import {
   type SettingsTimeline,
   type Statut,
 } from "@fc/shared";
-import { ErrorText } from "../components/ErrorText.js";
-import { Field } from "../components/Field.js";
-import { MoneyInput } from "../components/MoneyInput.js";
-import { ProjectionEditor } from "../components/ProjectionEditor.js";
-import { SettingsForm } from "../components/SettingsForm.js";
-import { api, useApi } from "../lib/api.js";
-import { date, eur } from "../lib/format.js";
+import { ErrorText } from "@/components/ErrorText";
+import { Field } from "@/components/Field";
+import { MoneyInput } from "@/components/MoneyInput";
+import { PageHeader } from "@/components/page-header";
+import { ProjectionEditor } from "@/components/ProjectionEditor";
+import { Choice, SettingsForm } from "@/components/SettingsForm";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { api, useApi } from "@/lib/api";
+import { date, eur } from "@/lib/format";
 
 const FIELD_LABELS: Record<keyof Settings, string> = {
   statut: "Statut",
@@ -31,18 +46,16 @@ const FIELD_LABELS: Record<keyof Settings, string> = {
   fraisGestionPortage: "Frais de portage",
 };
 
-function describe(patch: SettingsPatch["settings"]): string {
-  return Object.entries(patch)
-    .map(([k, v]) => {
-      const label = FIELD_LABELS[k as keyof Settings];
-      if (k === "statut") return `${label} : ${STATUT_LABELS[v as Statut]}`;
-      if (typeof v === "boolean") return `${label} : ${v ? "oui" : "non"}`;
-      if (k === "autresRevenusImposables" || k === "capitalEtComptesCourants") {
-        return `${label} : ${eur(v as number)}`;
-      }
-      return `${label} : ${String(v ?? "aucune")}`;
-    })
-    .join(" · ");
+function changes(patch: SettingsPatch["settings"]): string[] {
+  return Object.entries(patch).map(([k, v]) => {
+    const label = FIELD_LABELS[k as keyof Settings];
+    if (k === "statut") return `${label} : ${STATUT_LABELS[v as Statut]}`;
+    if (typeof v === "boolean") return `${label} : ${v ? "oui" : "non"}`;
+    if (k === "autresRevenusImposables" || k === "capitalEtComptesCourants") {
+      return `${label} : ${eur(v as number)}`;
+    }
+    return `${label} : ${String(v ?? "aucune")}`;
+  });
 }
 
 /** Only the settings that differ from those already in effect. */
@@ -52,37 +65,6 @@ function diff(before: Settings, after: Settings): Partial<Settings> {
     if (after[key] !== before[key]) out[key] = after[key];
   }
   return out;
-}
-
-function StatutSelect({ value, onChange }: { value: Statut; onChange: (s: Statut) => void }) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => {
-        onChange(e.target.value as Statut);
-      }}
-    >
-      {(Object.keys(STATUT_LABELS) as Statut[]).map((s) => (
-        <option key={s} value={s}>
-          {STATUT_LABELS[s]}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function PeriodiciteSelect({ s, onChange }: { s: Settings; onChange: (s: Settings) => void }) {
-  return (
-    <select
-      value={s.periodiciteUrssaf}
-      onChange={(e) => {
-        onChange({ ...s, periodiciteUrssaf: e.target.value as Settings["periodiciteUrssaf"] });
-      }}
-    >
-      <option value="mensuelle">Mensuelle</option>
-      <option value="trimestrielle">Trimestrielle</option>
-    </select>
-  );
 }
 
 function TimelineEditor({
@@ -99,12 +81,13 @@ function TimelineEditor({
   const current = draft ?? effective;
   const [error, setError] = useState<string | null>(null);
 
-  const save = (next: SettingsTimeline) => {
+  const save = (next: SettingsTimeline, message: string) => {
     setError(null);
     api
       .put("/settings", next)
       .then(() => {
         setDraft(null);
+        toast.success(message, { description: "Provisions et échéances recalculées." });
         onSaved();
       })
       .catch((e: unknown) => {
@@ -115,91 +98,149 @@ function TimelineEditor({
   const addChange = () => {
     const first = sorted[0];
     if (first !== undefined && validFrom <= first.validFrom) {
-      // Before (or on) the first date: becomes the new complete starting point.
-      save([{ validFrom, settings: current }, ...sorted.filter((p) => p.validFrom !== validFrom)]);
+      // On or before the first date: becomes the new complete starting point.
+      save(
+        [{ validFrom, settings: current }, ...sorted.filter((p) => p.validFrom !== validFrom)],
+        "Réglages de départ mis à jour",
+      );
       return;
     }
-    const changes = diff(effective, current);
-    if (Object.keys(changes).length === 0) {
+    const delta = diff(effective, current);
+    if (Object.keys(delta).length === 0) {
       setError("Aucun changement par rapport aux réglages en vigueur à cette date.");
       return;
     }
     const existing = sorted.find((p) => p.validFrom === validFrom);
-    const patch = { validFrom, settings: { ...(existing?.settings ?? {}), ...changes } };
-    save([...sorted.filter((p) => p.validFrom !== validFrom), patch]);
+    const patch = { validFrom, settings: { ...(existing?.settings ?? {}), ...delta } };
+    save(
+      [...sorted.filter((p) => p.validFrom !== validFrom), patch],
+      `Changement enregistré au ${date(validFrom)}`,
+    );
   };
 
   return (
-    <section className="card">
-      <h3>Réglages datés</h3>
-      <p className="muted small">
-        Chaque changement s'applique à partir de sa date (au mois près) : fin d'Acre, passage à la
-        TVA, option VFL, changement de statut, mariage…
-      </p>
-      <ol className="timeline">
-        {sorted.map((p, i) => (
-          <li key={p.validFrom}>
-            <strong>{date(p.validFrom)}</strong>{" "}
-            {i === 0 ? <span className="badge">départ</span> : null}
-            <p className="small">{i === 0 ? "Réglages initiaux complets" : describe(p.settings)}</p>
-            {i > 0 && (
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => {
-                  save(sorted.filter((x) => x.validFrom !== p.validFrom));
-                }}
-              >
-                Retirer
-              </button>
-            )}
-          </li>
-        ))}
-      </ol>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-serif text-lg">
+            <History className="size-5 text-primary" /> Historique
+          </CardTitle>
+          <CardDescription>
+            Chaque changement s'applique à partir de sa date : fin d'Acre, passage à la TVA, option
+            VFL, changement de statut, mariage…
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="relative grid gap-4 border-l border-border pl-5">
+            {sorted.map((p, i) => (
+              <li key={p.validFrom} className="relative">
+                <span className="absolute top-1 -left-[27px] size-3 rounded-full bg-primary ring-4 ring-card" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="grid gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif font-semibold">{date(p.validFrom)}</span>
+                      {i === 0 && <Badge variant="secondary">départ</Badge>}
+                    </div>
+                    {i === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {STATUT_LABELS[p.settings.statut ?? "micro_bnc"]} · réglages complets
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {changes(p.settings).map((c) => (
+                          <Badge key={c} variant="outline" className="font-normal">
+                            {c}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {i > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Retirer le changement du ${date(p.validFrom)}`}
+                      onClick={() => {
+                        save(
+                          sorted.filter((x) => x.validFrom !== p.validFrom),
+                          "Changement retiré",
+                        );
+                      }}
+                    >
+                      <Trash2 />
+                    </Button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
 
-      <h4>Ajouter ou modifier à une date</h4>
-      <div className="grid-3">
-        <Field label="À partir du">
-          <input
-            type="date"
-            value={validFrom}
-            onChange={(e) => {
-              setValidFrom(e.target.value);
-              setDraft(null);
-            }}
-          />
-        </Field>
-        <Field label="Statut">
-          <StatutSelect
-            value={current.statut}
-            onChange={(statut) => {
-              setDraft({ ...current, statut });
-            }}
-          />
-        </Field>
-        <Field label="Périodicité Urssaf (micro)">
-          <PeriodiciteSelect s={current} onChange={setDraft} />
-        </Field>
-      </div>
-      <SettingsForm value={current} onChange={setDraft} />
-      <div className="row">
-        <button type="button" onClick={addChange}>
-          Enregistrer à cette date
-        </button>
-        {draft !== null && (
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              setDraft(null);
-            }}
-          >
-            Annuler
-          </button>
-        )}
-      </div>
-      <ErrorText error={error} />
-    </section>
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif text-lg">Ajouter ou modifier à une date</CardTitle>
+          <CardDescription>
+            Le formulaire part des réglages en vigueur à la date choisie.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-6">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            <Field label="À partir du">
+              <Input
+                type="date"
+                value={validFrom}
+                onChange={(e) => {
+                  setValidFrom(e.target.value);
+                  setDraft(null);
+                }}
+              />
+            </Field>
+            <Field label="Statut">
+              <Choice
+                value={current.statut}
+                options={(Object.keys(STATUT_LABELS) as Statut[]).map(
+                  (s) => [s, STATUT_LABELS[s]] as const,
+                )}
+                onChange={(statut) => {
+                  setDraft({ ...current, statut });
+                }}
+              />
+            </Field>
+            <Field label="Périodicité Urssaf (micro)">
+              <Choice
+                value={current.periodiciteUrssaf}
+                options={[
+                  ["mensuelle", "Mensuelle"],
+                  ["trimestrielle", "Trimestrielle"],
+                ]}
+                onChange={(periodiciteUrssaf) => {
+                  setDraft({ ...current, periodiciteUrssaf });
+                }}
+              />
+            </Field>
+          </div>
+          <Separator />
+          <SettingsForm value={current} onChange={setDraft} />
+          <ErrorText error={error} />
+        </CardContent>
+        <CardFooter className="justify-end gap-2">
+          {draft !== null && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDraft(null);
+              }}
+            >
+              Annuler
+            </Button>
+          )}
+          <Button onClick={addChange}>
+            <Save /> Enregistrer au {date(validFrom)}
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
@@ -210,15 +251,9 @@ function BalanceEditor() {
   const [error, setError] = useState<string | null>(null);
   const last = snapshots.data?.at(-1);
   return (
-    <section className="card">
-      <h3>Solde bancaire</h3>
-      <p className="muted small">
-        Saisis le solde réel du compte pro à une date ; le cockpit y ajoute ensuite les mouvements
-        saisis.
-        {last !== undefined && ` Dernier relevé : ${eur(last.amount)} le ${date(last.date)}.`}
-      </p>
+    <Card>
       <form
-        className="grid-3"
+        className="grid grid-cols-1 gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           api
@@ -226,37 +261,66 @@ function BalanceEditor() {
             .then(() => {
               snapshots.reload();
               setError(null);
+              toast.success("Solde enregistré");
             })
             .catch((err: unknown) => {
               setError(err instanceof Error ? err.message : String(err));
             });
         }}
       >
-        <Field label="Date">
-          <input
-            type="date"
-            value={day}
-            onChange={(e) => {
-              setDay(e.target.value);
-            }}
-          />
-        </Field>
-        <Field label="Solde (€)">
-          <MoneyInput value={amount} onChange={setAmount} allowNegative required />
-        </Field>
-        <div className="field">
-          <button type="submit">Enregistrer</button>
-        </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-serif text-lg">
+            <Landmark className="size-5 text-primary" /> Solde bancaire
+          </CardTitle>
+          <CardDescription>
+            Le solde réel du compte pro à une date ; le cockpit y ajoute ensuite les mouvements
+            saisis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          {last !== undefined && (
+            <div className="flex items-center justify-between rounded-xl bg-secondary p-4">
+              <span className="text-sm text-muted-foreground">
+                Dernier relevé, le {date(last.date)}
+              </span>
+              <span className="num font-serif text-xl font-semibold">{eur(last.amount)}</span>
+            </div>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Date">
+              <Input
+                type="date"
+                value={day}
+                onChange={(e) => {
+                  setDay(e.target.value);
+                }}
+              />
+            </Field>
+            <Field label="Solde">
+              <MoneyInput value={amount} onChange={setAmount} allowNegative required />
+            </Field>
+          </div>
+          <ErrorText error={error ?? snapshots.error} />
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button type="submit">
+            <Save /> Enregistrer
+          </Button>
+        </CardFooter>
       </form>
-      <ErrorText error={error ?? snapshots.error} />
-    </section>
+    </Card>
   );
 }
 
 export function Reglages({ year }: { year: number }) {
   const timeline = useApi<SettingsTimeline>("/settings");
   return (
-    <div className="stack">
+    <div className="grid grid-cols-1 gap-6">
+      <PageHeader
+        icon={Settings2}
+        title="Réglages"
+        description="Tes réglages datés, ton prévisionnel et ton solde de départ"
+      />
       <ErrorText error={timeline.error} />
       {timeline.data !== null && (
         <TimelineEditor timeline={timeline.data} onSaved={timeline.reload} />

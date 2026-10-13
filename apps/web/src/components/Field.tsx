@@ -1,19 +1,24 @@
-import type { ReactNode } from "react";
+import { useId, type ReactElement, cloneElement } from "react";
+import { Label } from "@/components/ui/label";
 
+/** Label + control + hint. The control gets the generated id. */
 export function Field({
   label,
   hint,
   children,
 }: {
   label: string;
-  hint?: string;
-  children: ReactNode;
+  hint?: string | undefined;
+  children: ReactElement<{ id?: string }>;
 }) {
+  const id = useId();
   return (
-    <label className="field">
-      <span className="field-label">{label}</span>
-      {children}
-      {hint !== undefined && <span className="field-hint">{hint}</span>}
-    </label>
+    <div className="grid content-start gap-1.5">
+      <Label htmlFor={id} className="text-xs font-semibold text-muted-foreground">
+        {label}
+      </Label>
+      {cloneElement(children, { id })}
+      {hint !== undefined && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
   );
 }

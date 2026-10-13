@@ -23,6 +23,16 @@
   au header seul.
 - Secrets hors repo (`infra/.env`, git-ignoré). Images non-root, lockfile commité.
 
+## Interface
+
+- shadcn/ui (Tailwind v4) avec le thème terracotta / crème défini dans `apps/web/src/index.css`.
+  `apps/web/src/components/ui/` est généré par la CLI shadcn (vendored, exclu du lint strict) :
+  ajouter un composant avec `npx shadcn@4.21.0 add <nom>` depuis `apps/web`, puis remplacer les
+  imports `cn` par `@/lib/utils`.
+- Couleurs des séries de graphiques (`--chart-*`) : validées au validateur daltonisme (dataviz)
+  en clair et en sombre. Toute nouvelle couleur de série doit repasser le validateur.
+- Polices système uniquement (pas de requête vers un service de polices tiers).
+
 ## Commandes
 
 ```sh

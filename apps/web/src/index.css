@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Terracotta & crème. Light: cream surfaces, terracotta accents.
+   Dark: warm brown surfaces, softened terracotta. */
+:root {
+  --radius: 0.75rem;
+  --background: #faf5ec;
+  --foreground: #2b1d16;
+  --card: #fffdf8;
+  --card-foreground: #2b1d16;
+  --popover: #fffdf8;
+  --popover-foreground: #2b1d16;
+  --primary: #b9512f;
+  --primary-foreground: #fffaf3;
+  --secondary: #f3e9da;
+  --secondary-foreground: #4a3428;
+  --muted: #f1e8da;
+  --muted-foreground: #7a6656;
+  --accent: #f6e1d6;
+  --accent-foreground: #7c341c;
+  --destructive: #b42318;
+  --border: #e8dccb;
+  --input: #e2d4c0;
+  --ring: #c96a48;
+  --sidebar: #f4ebdd;
+  --sidebar-foreground: #3d2a20;
+  --sidebar-primary: #b9512f;
+  --sidebar-primary-foreground: #fffaf3;
+  --sidebar-accent: #ead9c6;
+  --sidebar-accent-foreground: #2b1d16;
+  --sidebar-border: #e3d3bf;
+  --sidebar-ring: #c96a48;
+  --success: #2f7a4f;
+  --warning-bg: #fbecd0;
+  --warning-fg: #6b4300;
+  /* Series colours, validated with the dataviz CVD validator on the card surface. */
+  --chart-net: #1f9a74;
+  --chart-cotis: #2a78d6;
+  --chart-impot: #c2593a;
+  --chart-frais: #6b4fbb;
+  --chart-cfp: #d39a1c;
+  --chart-realise: #2a78d6;
+  --chart-plan: #c2593a;
+}
+
+.dark {
+  --background: #1a1310;
+  --foreground: #f5ebdd;
+  --card: #251c18;
+  --card-foreground: #f5ebdd;
+  --popover: #251c18;
+  --popover-foreground: #f5ebdd;
+  --primary: #e07a55;
+  --primary-foreground: #1a1310;
+  --secondary: #33261f;
+  --secondary-foreground: #f0e2d0;
+  --muted: #2e231d;
+  --muted-foreground: #b9a593;
+  --accent: #3d2a21;
+  --accent-foreground: #f6c9b4;
+  --destructive: #ff8a7a;
+  --border: #3a2c25;
+  --input: #47362d;
+  --ring: #e07a55;
+  --sidebar: #201813;
+  --sidebar-foreground: #ead9c6;
+  --sidebar-primary: #e07a55;
+  --sidebar-primary-foreground: #1a1310;
+  --sidebar-accent: #33261f;
+  --sidebar-accent-foreground: #f5ebdd;
+  --sidebar-border: #33261f;
+  --sidebar-ring: #e07a55;
+  --success: #5cc08a;
+  --warning-bg: #3a2c12;
+  --warning-fg: #f3d48a;
+  --chart-net: #24a07a;
+  --chart-cotis: #3f86e0;
+  --chart-impot: #d4663f;
+  --chart-frais: #8670d6;
+  --chart-cfp: #bf8a1a;
+  --chart-realise: #3f86e0;
+  --chart-plan: #d4663f;
+}
+
+@theme inline {
+  /* System fonts only: no third-party font requests from a private finance app. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-success: var(--success);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-fg: var(--warning-fg);
+  --color-chart-net: var(--chart-net);
+  --color-chart-cotis: var(--chart-cotis);
+  --color-chart-impot: var(--chart-impot);
+  --color-chart-frais: var(--chart-frais);
+  --color-chart-cfp: var(--chart-cfp);
+  --color-chart-realise: var(--chart-realise);
+  --color-chart-plan: var(--chart-plan);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}

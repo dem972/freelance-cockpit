@@ -1,5 +1,9 @@
+import { Sprout } from "lucide-react";
 import type { AcreSummary } from "@fc/engine";
-import { date, eur } from "../lib/format.js";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { date, eur } from "@/lib/format";
 
 const monthName = new Intl.DateTimeFormat("fr-FR", {
   month: "long",
@@ -15,31 +19,35 @@ export function AcreCard({ acre, asOf }: { acre: AcreSummary; asOf: string }) {
   const elapsed = Math.max(0, Math.min(1, (now - start) / Math.max(1, end - start)));
   const over = now > end;
   return (
-    <section className="card">
-      <h3>Acre</h3>
-      <p>
-        {over ? "Terminée depuis le " : "Taux réduit jusqu'au "}
-        <strong>{date(acre.fin)}</strong> · mois d'épuisement :{" "}
-        <strong>{monthName.format(new Date(`${acre.moisEpuisement}-01T00:00:00Z`))}</strong>
-      </p>
-      <div
-        className="progress"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(elapsed * 100)}
-        aria-label="Période Acre écoulée"
-      >
-        <span style={{ width: `${String(elapsed * 100)}%` }} />
-      </div>
-      <p className="small muted">
-        Début d'activité le {date(acre.debutActivite)} · {Math.round(elapsed * 100)} % de la période
-        écoulée
-      </p>
-      <p>
-        Économie de cotisations sur l'année : <strong className="num">{eur(acre.economie)}</strong>
-      </p>
-      <p className="small muted">{acre.regle}</p>
-    </section>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-serif text-lg">
+          <Sprout className="size-5 text-success" /> Acre
+          <Badge variant={over ? "secondary" : "outline"}>{over ? "terminée" : "en cours"}</Badge>
+        </CardTitle>
+        <CardDescription>{acre.regle}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 sm:grid-cols-3">
+        <div>
+          <p className="text-xs text-muted-foreground">Mois d'épuisement</p>
+          <p className="font-serif text-lg font-semibold capitalize">
+            {monthName.format(new Date(`${acre.moisEpuisement}-01T00:00:00Z`))}
+          </p>
+          <p className="text-xs text-muted-foreground">taux réduit jusqu'au {date(acre.fin)}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">Économie sur l'année</p>
+          <p className="num font-serif text-lg font-semibold text-success">{eur(acre.economie)}</p>
+          <p className="text-xs text-muted-foreground">de cotisations en moins</p>
+        </div>
+        <div className="grid content-start gap-2">
+          <p className="text-xs text-muted-foreground">Période écoulée</p>
+          <Progress value={elapsed * 100} aria-label="Période Acre écoulée" />
+          <p className="text-xs text-muted-foreground">
+            {Math.round(elapsed * 100)} % depuis le {date(acre.debutActivite)}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

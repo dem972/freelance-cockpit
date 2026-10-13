@@ -7,7 +7,9 @@ import {
   type LedgerTransaction,
 } from "@fc/engine/cockpit";
 import { DEFAULT_SETTINGS, type Cents, type Projection } from "@fc/shared";
-import { CockpitView } from "./Cockpit.js";
+import { FlaskConical } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { CockpitView } from "./Cockpit";
 
 const YEAR = 2026;
 const AS_OF = "2026-07-15";
@@ -98,10 +100,12 @@ function demoData(): CockpitData {
 export default function Demo() {
   const data = useMemo(() => demoData(), []);
   return (
-    <div className="stack">
-      <p className="demo-banner">
-        Mode démo : données fictives calculées dans le navigateur, rien n'est enregistré.
-      </p>
+    <div className="grid grid-cols-1 gap-6">
+      <PageHeader
+        icon={FlaskConical}
+        title="Démo"
+        description="Données fictives calculées dans le navigateur, rien n'est enregistré"
+      />
       <CockpitView data={data} />
     </div>
   );
