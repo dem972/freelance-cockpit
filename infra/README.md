@@ -59,6 +59,19 @@ vit jamais sur le serveur, un vol du disque ou du bucket ne donne rien de lisibl
 Chaque nuit : `pg_dump -Fc | age -r $AGE_RECIPIENT` → volume `backups` + upload rclone. Un
 échec d'upload fait échouer la sauvegarde (visible dans `docker compose logs backup`).
 
+## 4 bis. Agents (copilot, rapports, veille des taux)
+
+- `AGENT_API_TOKEN` : secret interne agent → API (`openssl rand -hex 32`). nginx retire
+  `Authorization` des requêtes publiques : seuls les conteneurs internes peuvent le présenter.
+- `OPENAI_API_KEY` : sans clé, l'app fonctionne ; le copilot répond qu'il est désactivé, les
+  rapports utilisent le gabarit chiffré et la veille se limite aux sources et à `modele-social`.
+- `OPENAI_MODEL`, `OPENAI_MODEL_FAST`, `OPENAI_EMBEDDING_MODEL`, `RATES_WATCH_CRON`.
+- Les données envoyées à OpenAI (chiffres et libellés nécessaires à la question) sont soumises
+  à leur politique de rétention API.
+- Passage de `postgres:16-alpine` à `pgvector/pgvector:0.8.6-pg16` (glibc) : après le premier
+  démarrage sur un volume existant, lancer
+  `docker compose exec db psql -U cockpit -d cockpit -c "REINDEX DATABASE cockpit;"`.
+
 ## 5. Démarrer
 
 ```sh
