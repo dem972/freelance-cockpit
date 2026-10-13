@@ -94,3 +94,21 @@ describe("alerts", () => {
     expect(after.some((a) => a.key === late?.key)).toBe(false);
   });
 });
+
+describe("GET /api/optimize", () => {
+  it("ranks options on the real year", async () => {
+    await call("PUT", "/projections/2026", {
+      tjm: 50_000,
+      joursParMois: Array<number>(12).fill(15),
+      fraisMensuels: 15_000,
+      conges: [],
+      joursDepuisCalendrier: false,
+    });
+    const body = (await call("GET", "/optimize?year=2026")).body as {
+      baseline: { statut: string };
+      options: { gain: number }[];
+    };
+    expect(body.baseline.statut).toBe("micro_bnc");
+    expect(body.options.length).toBeGreaterThan(4);
+  });
+});

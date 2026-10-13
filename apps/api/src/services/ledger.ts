@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { computeCockpit, type CockpitComputation } from "@fc/engine/cockpit";
+import { computeCockpit, type CockpitComputation, type CockpitInput } from "@fc/engine/cockpit";
 import {
   DEFAULT_SETTINGS,
   Projection,
@@ -60,17 +60,14 @@ export async function loadTransactions(db: Db, year: number) {
     .orderBy(transactions.date, transactions.id);
 }
 
-export async function computeYear(
-  db: Db,
-  year: number,
-  asOf: IsoDate,
-): Promise<CockpitComputation> {
+/** Everything the engine needs for a year, loaded from the database. */
+export async function cockpitInput(db: Db, year: number, asOf: IsoDate): Promise<CockpitInput> {
   const [timeline, projection, txs] = await Promise.all([
     loadTimeline(db),
     loadProjection(db, year),
     loadTransactions(db, year),
   ]);
-  return computeCockpit({
+  return {
     year,
     asOf,
     timeline,
@@ -82,7 +79,15 @@ export async function computeYear(
       kind: t.kind,
       vatAmount: t.vatAmount as Cents,
     })),
-  });
+  };
+}
+
+export async function computeYear(
+  db: Db,
+  year: number,
+  asOf: IsoDate,
+): Promise<CockpitComputation> {
+  return computeCockpit(await cockpitInput(db, year, asOf));
 }
 
 function urssafLabel(start: IsoDate, end: IsoDate): string {

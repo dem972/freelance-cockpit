@@ -15,7 +15,7 @@ import { applyRate } from "./money.js";
 import { getRateTable } from "./rates.js";
 import { settingsAt } from "./settings.js";
 import { computeStatut, MODELE_SOCIAL_VERSION } from "./societe.js";
-import type { Breakdown, MonthInput } from "./types.js";
+import type { Breakdown, MonthInput, YearInput } from "./types.js";
 
 export interface LedgerTransaction {
   id: number;
@@ -107,13 +107,21 @@ export function projectedMonths(projection: Projection | null): MonthInput[] {
   });
 }
 
+/** The year as expected to end: realised months, then the projection. */
+export function projectedYearInput(input: CockpitInput): YearInput {
+  const last = lastRealisedMonth(input.year, input.asOf);
+  const actual = actualMonths(input.year, input.transactions);
+  const forecast = projectedMonths(input.projection);
+  const months = actual.map((m, i) => (m.month <= last ? m : (forecast[i] ?? m)));
+  return { year: input.year, months, timeline: input.timeline };
+}
+
 export function computeCockpit(input: CockpitInput): CockpitComputation {
   const { year, timeline } = input;
   const statut = settingsAt(timeline, monthStart(year, 1)).statut;
   const last = lastRealisedMonth(year, input.asOf);
   const actual = actualMonths(year, input.transactions);
-  const forecast = projectedMonths(input.projection);
-  const merged = actual.map((m, i) => (m.month <= last ? m : (forecast[i] ?? m)));
+  const merged = projectedYearInput(input).months;
   const realisedOnly = actual.map((m) =>
     m.month <= last ? m : { month: m.month, ca: 0 as Cents, fraisPro: 0 as Cents },
   );
@@ -248,3 +256,4 @@ export function balanceFromLedger(
   };
 }
 export * from "./alerts.js";
+export * from "./optimize.js";

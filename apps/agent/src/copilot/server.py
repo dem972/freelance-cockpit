@@ -44,6 +44,10 @@ class ResumeIn(BaseModel):
     approved: bool
 
 
+class ReportIn(BaseModel):
+    period: str | None = Field(default=None, pattern=r"^\d{4}-(0[1-9]|1[0-2])$")
+
+
 def _text(message: BaseMessage) -> str:
     return str(message.text)
 
@@ -129,6 +133,21 @@ def create_app(deps_factory: Callable[[], Deps], verify: Callable[[Request], str
     @app.get("/agent/chat/{thread_id}", dependencies=[Depends(auth)])
     def history(thread_id: str, d: Deps = Depends(deps)) -> dict[str, Any]:  # noqa: B008
         return snapshot(graph_for(d, thread_id), thread_id)
+
+    @app.get("/agent/reports", dependencies=[Depends(auth)])
+    def reports(d: Deps = Depends(deps)) -> list[dict[str, Any]]:  # noqa: B008
+        return d.store.list_reports() if d.store is not None else []
+
+    @app.get("/agent/reports/{report_id}", dependencies=[Depends(auth)])
+    def report(report_id: int, d: Deps = Depends(deps)) -> dict[str, Any]:  # noqa: B008
+        found = d.store.get_report(report_id) if d.store is not None else None
+        if found is None:
+            raise HTTPException(status_code=404, detail="Rapport introuvable.")
+        return found
+
+    @app.post("/agent/reports", dependencies=[Depends(auth)])
+    def new_report(body: ReportIn, d: Deps = Depends(deps)) -> dict[str, str]:  # noqa: B008
+        return {"task_id": d.enqueue("copilot.monthly_report", {"period": body.period})}
 
     @app.post("/agent/knowledge/reindex", dependencies=[Depends(auth)])
     def reindex(d: Deps = Depends(deps)) -> dict[str, str]:  # noqa: B008

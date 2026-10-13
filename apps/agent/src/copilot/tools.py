@@ -182,6 +182,30 @@ def make_tools(
         return [_breakdown(b) for b in api.simulate(body)]
 
     @tool
+    def get_optimizations() -> Json:
+        """Pistes chiffrées par le moteur sur l'année réelle (réalisé + prévisionnel) : autres
+        statuts, part rémunération/dividendes en EURL IS et SASU, versement libératoire. Montants
+        en euros ; `ecart` = différence de net avec la situation actuelle."""
+        r = api.optimize(year)
+        return {
+            "situation_actuelle": {
+                "titre": r["baseline"]["title"],
+                "net": euros(r["baseline"]["net"]),
+            },
+            "options": [
+                {
+                    "titre": o["title"],
+                    "changement": o["change"],
+                    "net": euros(o["net"]),
+                    "ecart": euros(o["gain"]),
+                    "points_attention": o["warnings"],
+                }
+                for o in r["options"]
+            ],
+            "avertissement": r["disclaimer"],
+        }
+
+    @tool
     def search_knowledge(question: str) -> Json:
         """Cherche dans les taux et seuils sourcés et dans les hypothèses du moteur (recherche
         sémantique). À utiliser pour citer une source officielle ou expliquer une règle."""
@@ -350,6 +374,7 @@ def make_tools(
         list_invoices,
         get_settings,
         simulate,
+        get_optimizations,
         search_knowledge,
         add_transaction,
         add_invoice,

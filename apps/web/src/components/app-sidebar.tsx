@@ -1,5 +1,6 @@
 import {
   Calculator,
+  FileBarChart,
   FlaskConical,
   LayoutDashboard,
   Monitor,
@@ -51,6 +52,12 @@ export const PILOTAGE: NavItem[] = [
     label: "Saisie",
     description: "Mouvements, factures et échéances",
     icon: ReceiptText,
+  },
+  {
+    route: "/rapports",
+    label: "Rapports",
+    description: "Synthèses mensuelles et pistes chiffrées",
+    icon: FileBarChart,
   },
 ];
 

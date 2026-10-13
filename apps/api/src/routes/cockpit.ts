@@ -1,11 +1,17 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
-import { computeAlerts, computePlan, type CockpitData } from "@fc/engine/cockpit";
+import {
+  computeAlerts,
+  computePlan,
+  optimize,
+  projectedYearInput,
+  type CockpitData,
+} from "@fc/engine/cockpit";
 import type { Cents, IsoDate } from "@fc/shared";
 import type { Db } from "../db.js";
 import { alertDismissals } from "../db/schema.js";
 import { yearParam } from "../http.js";
-import { computeYear, loadProjection, loadTimeline } from "../services/ledger.js";
+import { cockpitInput, computeYear, loadProjection, loadTimeline } from "../services/ledger.js";
 
 interface CoverageRow {
   snapshot_date: string | null;
@@ -105,6 +111,13 @@ export function cockpitRoutes({ db, today }: { db: Db; today: () => IsoDate }) {
     ]);
     const hidden = new Set(dismissed.map((d) => d.key));
     return c.json(computeAlerts(data).filter((a) => !hidden.has(a.key)));
+  });
+
+  /** Deterministic optimizer on the year as expected to end (realised + projection). */
+  app.get("/optimize", async (c) => {
+    const asOf = today();
+    const year = yearParam(c.req.query("year"), Number(asOf.slice(0, 4)));
+    return c.json(optimize(projectedYearInput(await cockpitInput(db, year, asOf))));
   });
 
   app.post("/alerts/:key/dismiss", async (c) => {

@@ -57,6 +57,9 @@ class ApiClient:
     def rates(self, year: int) -> Json:
         return self._get("/rates", year=year)
 
+    def optimize(self, year: int) -> Json:
+        return self._get("/optimize", year=year)
+
     def simulate(self, body: Json) -> Json:
         return self._send("POST", "/simulate", body)
 

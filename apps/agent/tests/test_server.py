@@ -126,3 +126,13 @@ def test_access_jwt(keys: tuple[Any, Any]) -> None:
         with pytest.raises(Exception) as err:
             verify(Req(bad))  # type: ignore[arg-type]
         assert getattr(err.value, "status_code", None) == status
+
+
+def test_report_endpoints_validate_and_enqueue() -> None:
+    with make_client([], FakeApi({})) as client:
+        assert client.get("/agent/reports").json() == []
+        assert client.post("/agent/reports", json={"period": "2026-09"}).json() == {
+            "task_id": "task-1"
+        }
+        assert client.post("/agent/reports", json={"period": "2026-13"}).status_code == 422
+        assert client.get("/agent/reports/1").status_code == 404

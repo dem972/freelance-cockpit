@@ -11,6 +11,7 @@ import { useApi } from "@/lib/api";
 import { useRoute, type Route } from "@/lib/router";
 import { useTheme } from "@/lib/theme";
 import { Cockpit } from "@/pages/Cockpit";
+import { Rapports } from "@/pages/Rapports";
 import { Reglages } from "@/pages/Reglages";
 import { Saisie } from "@/pages/Saisie";
 import { Simulator } from "@/pages/Simulator";
@@ -28,6 +29,8 @@ function Page({ route }: { route: Route }) {
       return <Simulator />;
     case "/saisie":
       return <Saisie year={YEAR} />;
+    case "/rapports":
+      return <Rapports year={YEAR} />;
     case "/reglages":
       return <Reglages year={YEAR} />;
     case "/demo":

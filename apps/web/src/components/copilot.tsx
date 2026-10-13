@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, KeyRound, Loader2, Plus, Send, Sparkles, Wrench, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { agent, notifyDataChanged, type ChatState, type PendingAction } from "@/lib/agent";
 import { cn } from "@/lib/utils";
+import { Markdown } from "./markdown";
 
 const THREAD_KEY = "fc.copilot.thread";
 const SUGGESTIONS = [
@@ -54,56 +55,6 @@ function writeThread(id: string | null) {
   } catch {
     // Private mode: the conversation lasts for this session only.
   }
-}
-
-/** Minimal, safe markdown: paragraphs, bullet lists and **bold** (no HTML injection). */
-function Markdown({ text }: { text: string }) {
-  const inline = (line: string): ReactNode[] =>
-    line
-      .split(/(\*\*[^*]+\*\*)/g)
-      .map((part, i) =>
-        part.startsWith("**") && part.endsWith("**") ? (
-          <strong key={i}>{part.slice(2, -2)}</strong>
-        ) : (
-          part
-        ),
-      );
-  const blocks: ReactNode[] = [];
-  let list: string[] = [];
-  const flush = () => {
-    if (list.length > 0) {
-      blocks.push(
-        <ul key={`l${String(blocks.length)}`} className="grid gap-1 pl-5 [list-style:disc]">
-          {list.map((item, i) => (
-            <li key={i}>{inline(item)}</li>
-          ))}
-        </ul>,
-      );
-      list = [];
-    }
-  };
-  for (const raw of text.split("\n")) {
-    const line = raw.trimEnd();
-    const bullet = /^\s*[-*•]\s+(.*)$/.exec(line);
-    if (bullet?.[1] !== undefined) {
-      list.push(bullet[1]);
-      continue;
-    }
-    flush();
-    if (line.trim() === "") continue;
-    const heading = /^#{1,4}\s+(.*)$/.exec(line);
-    blocks.push(
-      heading?.[1] !== undefined ? (
-        <p key={blocks.length} className="font-serif font-semibold">
-          {inline(heading[1])}
-        </p>
-      ) : (
-        <p key={blocks.length}>{inline(line)}</p>
-      ),
-    );
-  }
-  flush();
-  return <div className="grid gap-2">{blocks}</div>;
 }
 
 function ApprovalCard({

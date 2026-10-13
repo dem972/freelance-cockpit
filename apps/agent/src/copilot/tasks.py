@@ -9,7 +9,8 @@ from celery.schedules import crontab
 from .api_client import ApiClient
 from .config import get_settings
 from .knowledge import index_knowledge
-from .llm import embedder
+from .llm import chat_model, embedder
+from .reports import generate, previous_month
 from .store import Store, make_pool
 
 settings = get_settings()
@@ -36,6 +37,8 @@ def _cron(expr: str) -> Any:
 
 app.conf.beat_schedule = {
     "index-knowledge-daily": {"task": "copilot.index_knowledge", "schedule": _cron("30 5 * * *")},
+    # 1st of the month, 07:00: report of the previous month.
+    "monthly-report": {"task": "copilot.monthly_report", "schedule": _cron("0 7 1 * *")},
 }
 
 _store: Store | None = None
@@ -53,3 +56,9 @@ def index_knowledge_task() -> int:
     if not settings.ai_enabled:
         return 0
     return index_knowledge(ApiClient(settings), store(), embedder(settings), date.today().year)
+
+
+@app.task(name="copilot.monthly_report")  # type: ignore[untyped-decorator]
+def monthly_report_task(period: str | None = None) -> int:
+    model = chat_model(settings) if settings.ai_enabled else None
+    return generate(ApiClient(settings), store(), period or previous_month(date.today()), model)
