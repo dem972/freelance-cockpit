@@ -1,0 +1,24 @@
+{
+  "name": "@fc/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/index.js",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15"
+  },
+  "dependencies": {
+    "@fc/shared": "workspace:*",
+    "@hono/node-server": "2.1.5",
+    "drizzle-orm": "0.45.4",
+    "hono": "4.13.13",
+    "postgres": "3.4.9",
+    "zod": "4.6.7"
+  }
+}

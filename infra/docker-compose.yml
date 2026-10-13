@@ -1,0 +1,57 @@
+name: finance-cockpit
+
+# `backend` is internal: db and api have no route to the outside world.
+# `edge` only carries web (and cloudflared in J7).
+networks:
+  backend:
+    internal: true
+  edge: {}
+
+volumes:
+  pgdata: {}
+
+services:
+  db:
+    image: postgres:16.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cockpit
+      POSTGRES_USER: cockpit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cockpit -d cockpit"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    read_only: true
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgres://cockpit:${POSTGRES_PASSWORD}@db:5432/cockpit
+    networks: [backend]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    restart: unless-stopped
+    ports:
+      # Loopback only. Remote access goes through cloudflared + Access (J7).
+      - "127.0.0.1:${WEB_PORT:-8380}:8080"
+    networks: [backend, edge]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # J7: cloudflared (tunnel → web:8080) and backup (pg_dump | age → bucket).
