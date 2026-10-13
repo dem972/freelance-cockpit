@@ -1,0 +1,15 @@
+name: Idea
+description: Suggest an improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need, and why?
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Official rules involved (if any)
+      description: Links to urssaf.fr / service-public.gouv.fr / impots.gouv.fr

@@ -1,47 +1,88 @@
 # Finance Cockpit
 
-Outil perso de suivi du net freelance : simulateur multi-statuts + cockpit du réel, un seul moteur
-de calcul. Voir `BRIEF.md` pour le périmètre et `CLAUDE.md` pour les règles de travail.
+**Self-hosted cash-flow cockpit and tax simulator for French freelancers.**
+Every rate is sourced. Every amount comes from a tested engine. The AI copilot never invents a
+number.
 
-> Estimations uniquement. Ne constitue pas un conseil fiscal ou comptable.
+> ⚠️ Estimates only — not tax, legal or accounting advice. Always check with the official
+> simulators (Urssaf, impots.gouv) or an accountant. The user interface is in French because the
+> rules are French.
 
-## Structure
+## What it does
 
-| Chemin            | Rôle                                        |
-| ----------------- | ------------------------------------------- |
-| `packages/engine` | Moteur de calcul pur (navigateur + serveur) |
-| `packages/shared` | Types et schémas zod partagés               |
-| `apps/api`        | API Hono + Drizzle (Postgres)               |
-| `apps/web`        | SPA React + Vite                            |
-| `db/migrations`   | Migrations SQL versionnées                  |
-| `infra`           | Docker Compose, Dockerfiles, nginx          |
+|                         |                                                                                                                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Simulator**           | From a daily rate (TJM), billed days and expenses: net income for Micro-BNC, EURL (IR / IS), SASU and portage salarial, side by side, with the breakdown "for you / contributions / tax / CFP". |
+| **Cockpit**             | From your invoices and bank movements: available balance (balance − unpaid provisions), coverage before the next deadline, realised vs projected revenue and net, Urssaf schedule.              |
+| **Sourced rates**       | Each rate and threshold carries its official source URL and verification date, shown next to the numbers. Conflicting sources are flagged, never hidden.                                        |
+| **Dated settings**      | Status, VAT, versement libératoire, Acre, household… change during the year; the engine computes month by month.                                                                                |
+| **Alerts**              | Deterministic rules: coverage, overdue / upcoming deadlines, VAT and micro thresholds, end of Acre.                                                                                             |
+| **Copilot (optional)**  | Chat that reads your data and runs the engine; every write (entry, invoice, setting) waits for your approval.                                                                                   |
+| **Reports & optimizer** | Monthly report (template, or written by the model from the same figures); optimizer replaying your real year one lever at a time.                                                               |
+| **Rates watch**         | Weekly re-check of every official source; AI-read values are kept only if the quote is found verbatim on the page and contains the number.                                                      |
 
-## Démarrer
+## How it is built
+
+```
+packages/engine   Pure TypeScript engine (browser + server), integer cents, sourced rates JSON
+packages/shared   Types and zod schemas
+apps/api          Hono + Drizzle (Postgres 16 + pgvector)
+apps/web          React + Vite + shadcn/ui
+apps/agent        Python: LangGraph + Celery + pgvector (copilot, reports, rates watch)
+infra/            Docker Compose, nginx, Cloudflare Tunnel + Access, encrypted backups
+```
+
+- **Micro-BNC** is modelled from the official rates (`packages/engine/rates/2026.json`) and checked
+  against [modele-social](https://www.npmjs.com/package/modele-social), the open-source rules
+  behind mon-entreprise.urssaf.fr, on a 99-case grid.
+- **EURL, SASU, portage** use modele-social for contributions and corporate tax; income tax uses
+  the engine's own sourced barème. Portage is returned as a range.
+- Read more: [engine](packages/engine/README.md) · [agents](apps/agent/README.md) ·
+  [deployment](infra/README.md) · [design brief (FR)](BRIEF.md).
+
+## Quick start (local)
+
+Requirements: Node 24, pnpm 10, Docker.
 
 ```sh
+git clone <this repo> && cd finance-cockpit
 pnpm install
-pnpm dev
+
+cp infra/.env.example infra/.env
+# In infra/.env: set POSTGRES_PASSWORD, AGENT_API_TOKEN (openssl rand -hex 32), AUTH_MODE=none
+cd infra && docker compose up -d --build --wait
+open http://127.0.0.1:8380
 ```
 
-Stack complète (Postgres + API + nginx), avec `AUTH_MODE=none` dans `infra/.env` pour le
-développement local :
+`AUTH_MODE=none` is for local use only. To expose it, follow [infra/README.md](infra/README.md)
+(Cloudflare Tunnel + Access, JWT verified by the API, encrypted off-site backups).
+
+The copilot needs `OPENAI_API_KEY` in `infra/.env`; everything else works without it.
+
+### Development
 
 ```sh
-cd infra
-cp .env.example .env   # renseigner POSTGRES_PASSWORD
-docker compose up -d --build --wait
-curl http://127.0.0.1:8380/api/health
+pnpm dev                                   # api :3000 + web (Vite)
+pnpm lint && pnpm format:check && pnpm typecheck && pnpm test
+cd apps/agent && uv sync && uv run pytest  # agents
 ```
 
-Déploiement (tunnel Cloudflare, Access, sauvegardes chiffrées, restauration) :
-[`infra/README.md`](infra/README.md).
+## Status
 
-## Pages
+Personal tool, single user, year 2026 rates. Statuts covered: Micro-BNC (BNC non réglementé and
+Cipav), EURL IR/IS, SASU, portage salarial. Not covered: BIC micro activities, multi-user, bank
+connections (planned behind a `TransactionSource` interface).
 
-| Route         | Contenu                                                                |
-| ------------- | ---------------------------------------------------------------------- |
-| `/cockpit`    | Solde disponible, couverture, réalisé vs prévu, échéancier, Acre       |
-| `/saisie`     | Mouvements, factures, échéances                                        |
-| `/simulateur` | Net par statut, comparaison, taux sourcés                              |
-| `/reglages`   | Réglages datés, prévisionnel (calendrier de congés), solde bancaire    |
-| `/demo`       | Cockpit sur données fictives, calculé dans le navigateur (`VITE_DEMO`) |
+## Contributing
+
+Contributions are welcome, especially rate corrections with an official source. See
+[CONTRIBUTING.md](CONTRIBUTING.md). Security issues: [SECURITY.md](SECURITY.md).
+
+## License
+
+[GNU Affero General Public License v3.0 or later](LICENSE). If you run a modified version as a
+network service, you must offer its source to its users (set `SOURCE_URL` so the footer links to
+your fork).
+
+Third-party: modele-social and publicodes (MIT, by Urssaf / beta.gouv.fr), shadcn/ui (MIT), and
+the dependencies listed in the lockfiles.

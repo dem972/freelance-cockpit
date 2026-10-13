@@ -1,0 +1,25 @@
+# Weekly updates, never for releases younger than 14 days (supply-chain cooldown).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+  - package-ecosystem: uv
+    directory: /apps/agent
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+  - package-ecosystem: docker
+    directories: [/infra, /infra/backup]
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+  - package-ecosystem: docker-compose
+    directory: /infra
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }

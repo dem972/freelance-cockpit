@@ -1,0 +1,44 @@
+name: Rate correction
+description: A rate or threshold is wrong or outdated
+title: "rate: <key>"
+labels: ["rates"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every rate must come from an official source. Thanks for bringing one!
+  - type: input
+    id: key
+    attributes:
+      label: Rate key
+      description: As shown in the app ("Taux et seuils utilisés") or in packages/engine/rates/<year>.json
+      placeholder: micro.cotisations.bnc.regime_general
+    validations:
+      required: true
+  - type: input
+    id: values
+    attributes:
+      label: Current value → correct value
+      placeholder: 25,6 % → 26,1 %
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Official source URL
+      description: urssaf.fr, autoentrepreneur.urssaf.fr, service-public.gouv.fr, impots.gouv.fr, legifrance.gouv.fr, bofip.impots.gouv.fr
+    validations:
+      required: true
+  - type: textarea
+    id: quote
+    attributes:
+      label: Exact quote from the source
+    validations:
+      required: true
+  - type: input
+    id: checked
+    attributes:
+      label: Date you checked the source
+      placeholder: 2026-10-13
+    validations:
+      required: true

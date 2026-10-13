@@ -1,124 +1,130 @@
-# Déploiement
+# Deployment
 
-Docker tourne sur une machine locale. Le seul accès depuis l'extérieur passe par un tunnel
-Cloudflare (`cloudflared` sort vers Cloudflare, aucun port entrant) protégé par Cloudflare Access.
-L'API vérifie elle-même le JWT d'Access : sans jeton valide, aucune donnée ne sort.
+Docker runs on a machine you own. The only way in from outside is a Cloudflare Tunnel
+(`cloudflared` dials out to Cloudflare, no inbound port) protected by Cloudflare Access. The API
+verifies the Access JWT itself: without a valid token, no data leaves.
 
 ```
-navigateur ─▶ Cloudflare Access ─▶ tunnel ─▶ cloudflared ─▶ web:8080 (nginx) ─▶ api:3000 ─▶ db
-                                                                  backup ─▶ bucket distant
+browser ─▶ Cloudflare Access ─▶ tunnel ─▶ cloudflared ─▶ web:8080 (nginx) ─▶ api:3000 ─▶ db
+                                                          └▶ agent:8000 ─▶ OpenAI (optional)
+                                                       backup ─▶ remote bucket
 ```
 
-| Réseau    | Services             | Sortie internet |
-| --------- | -------------------- | --------------- |
-| `backend` | db, api, web, backup | non (internal)  |
-| `edge`    | web, cloudflared     | oui             |
-| `egress`  | backup               | oui             |
+| Network        | Services                                       | Internet access |
+| -------------- | ---------------------------------------------- | --------------- |
+| `backend`      | db, api, web, redis, agent*, backup            | no (internal)   |
+| `edge`         | web, cloudflared                               | yes             |
+| `egress`       | backup                                         | yes             |
+| `agent-egress` | agent, agent-worker (OpenAI, official sources) | yes             |
 
-## 1. Préparer `infra/.env`
+## 1. Prepare `infra/.env`
 
 ```sh
 cp infra/.env.example infra/.env && chmod 600 infra/.env
 ```
 
-Renseigner `POSTGRES_PASSWORD` (long, aléatoire), puis les sections ci-dessous. Le fichier est
-ignoré par git ; ne jamais le copier dans une image.
+Set `POSTGRES_PASSWORD` (long, random), `AGENT_API_TOKEN` (`openssl rand -hex 32`), then the
+sections below. The file is git-ignored; never copy it into an image.
 
-## 2. Tunnel Cloudflare
+## 2. Cloudflare Tunnel
 
-1. Zero Trust → Networks → Tunnels → **Create a tunnel** (type cloudflared), nom
-   `finance-cockpit`. Copier le **token** dans `CLOUDFLARE_TUNNEL_TOKEN`.
-2. Onglet **Public hostname** : `cockpit.<ton-domaine>` → service `HTTP` → `web:8080`.
+1. Zero Trust → Networks → Tunnels → **Create a tunnel** (cloudflared), name `finance-cockpit`.
+   Copy the **token** to `CLOUDFLARE_TUNNEL_TOKEN`.
+2. **Public hostname** tab: `cockpit.<your-domain>` → service `HTTP` → `web:8080`.
 
 ## 3. Cloudflare Access
 
-1. Zero Trust → Access → Applications → **Add an application** → Self-hosted, domaine
-   `cockpit.<ton-domaine>`.
-2. Politique **Allow**, règle _Emails_ = ton adresse (méthode : One-time PIN ou ton SSO).
-3. Dans l'application, copier l'**Application Audience (AUD) Tag** → `CF_ACCESS_AUD`.
-4. `CF_ACCESS_TEAM_DOMAIN` = `<team>.cloudflareaccess.com` ; `ALLOWED_EMAILS` = ta ou tes
-   adresses, séparées par des virgules ; `AUTH_MODE=access`.
+1. Zero Trust → Access → Applications → **Add an application** → Self-hosted, domain
+   `cockpit.<your-domain>`.
+2. **Allow** policy, rule _Emails_ = your address (One-time PIN or your SSO).
+3. Copy the application's **Application Audience (AUD) Tag** → `CF_ACCESS_AUD`.
+4. `CF_ACCESS_TEAM_DOMAIN` = `<team>.cloudflareaccess.com`; `ALLOWED_EMAILS` = your address(es),
+   comma-separated; `AUTH_MODE=access`.
 
-L'API vérifie : signature RS256 avec les clés de `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`,
-émetteur, audience, expiration, puis l'email dans `ALLOWED_EMAILS`. Seul `/api/health` reste
-ouvert (aucune donnée, utilisé par le healthcheck). Avec `AUTH_MODE=access`, l'URL locale
-`127.0.0.1:8380` affiche l'interface mais l'API y répond 401 : tout passe par Access.
+The API checks the RS256 signature against `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`,
+the issuer, audience, expiry, then the email against `ALLOWED_EMAILS`. Only `/api/health` stays
+open (no data, used by the healthcheck). With `AUTH_MODE=access`, the local URL
+`127.0.0.1:8380` shows the UI but the API answers 401: everything goes through Access.
 
-## 4. Sauvegardes
+## 4. Backups
 
-Chiffrées avec [age](https://age-encryption.org) vers une **clé publique** : la clé privée ne
-vit jamais sur le serveur, un vol du disque ou du bucket ne donne rien de lisible.
+Encrypted with [age](https://age-encryption.org) to a **public key**: the private key never
+lives on the server, so a stolen disk or bucket reveals nothing.
 
-1. Sur ton poste (pas sur le serveur) : `age-keygen -o finance-cockpit-age.key`. Garder ce
-   fichier hors ligne (gestionnaire de mots de passe + copie papier/clé USB).
-2. Copier la ligne `Public key: age1...` dans `AGE_RECIPIENT`.
-3. Bucket S3-compatible (R2, B2, Scaleway…) avec une clé limitée à ce bucket :
+1. On your laptop (not the server): `age-keygen -o finance-cockpit-age.key`. Keep that file
+   offline (password manager + paper / USB copy).
+2. Copy the `Public key: age1...` line to `AGE_RECIPIENT`.
+3. An S3-compatible bucket (R2, B2, Scaleway…) with a key restricted to it:
    `RCLONE_REMOTE=remote:<bucket>/finance-cockpit`, `S3_*`.
-4. `BACKUP_AT` (heure locale, `TZ`), rétention `KEEP_DAYS` (locale et distante).
+4. `BACKUP_AT` (local time, `TZ`), retention `KEEP_DAYS` (local and remote).
 
-Chaque nuit : `pg_dump -Fc | age -r $AGE_RECIPIENT` → volume `backups` + upload rclone. Un
-échec d'upload fait échouer la sauvegarde (visible dans `docker compose logs backup`).
+Every night: `pg_dump -Fc | age -r $AGE_RECIPIENT` → `backups` volume + rclone upload. A failed
+upload fails the backup (visible in `docker compose logs backup`).
 
-## 4 bis. Agents (copilot, rapports, veille des taux)
+## 5. Agents (copilot, reports, rates watch)
 
-- `AGENT_API_TOKEN` : secret interne agent → API (`openssl rand -hex 32`). nginx retire
-  `Authorization` des requêtes publiques : seuls les conteneurs internes peuvent le présenter.
-- `OPENAI_API_KEY` : sans clé, l'app fonctionne ; le copilot répond qu'il est désactivé, les
-  rapports utilisent le gabarit chiffré et la veille se limite aux sources et à `modele-social`.
+- `AGENT_API_TOKEN`: internal agent → API secret. nginx strips `Authorization` from public
+  requests, so only internal containers can present it.
+- `OPENAI_API_KEY`: optional. Without it the app works; the copilot says it is disabled, reports
+  use the figures-only template and the rates watch only checks pages and `modele-social`.
 - `OPENAI_MODEL`, `OPENAI_MODEL_FAST`, `OPENAI_EMBEDDING_MODEL`, `RATES_WATCH_CRON`.
-- Les données envoyées à OpenAI (chiffres et libellés nécessaires à la question) sont soumises
-  à leur politique de rétention API.
-- Passage de `postgres:16-alpine` à `pgvector/pgvector:0.8.6-pg16` (glibc) : après le premier
-  démarrage sur un volume existant, lancer
+- Data sent to OpenAI (the figures and labels a question needs) is subject to their API data
+  retention policy.
+- Upgrading from `postgres:16-alpine` to `pgvector/pgvector:0.8.6-pg16` (musl → glibc collation):
+  after the first start on an existing volume, run
   `docker compose exec db psql -U cockpit -d cockpit -c "REINDEX DATABASE cockpit;"`.
 
-## 5. Démarrer
+## 6. Source link (AGPL)
+
+Set `SOURCE_URL` to the repository you deploy from (your fork if you changed anything): the
+footer links to it, as AGPL-3.0 §13 requires for network use.
+
+## 7. Start
 
 ```sh
 cd infra
 docker compose --profile prod up -d --build --wait
 docker compose --profile prod ps
-docker compose --profile prod run --rm backup once   # première sauvegarde tout de suite
+docker compose --profile prod run --rm backup once   # first backup right away
 ```
 
-Sans `--profile prod`, seuls db, api et web démarrent (développement local, `AUTH_MODE=none`
-possible ; l'API l'annonce dans ses logs).
+Without `--profile prod`, cloudflared and backup do not start (local development; `AUTH_MODE=none`
+is possible and the API logs a warning).
 
-## 6. Restaurer
+## 8. Restore
 
-**Test de restauration** (mensuel, et après toute modification de l'infra) : sauvegarde
-fraîche, restauration dans un Postgres jetable, comparaison table par table.
+**Restore test** (monthly, and after any infrastructure change): fresh backup, restore into a
+throwaway Postgres, table-by-table row count comparison.
 
 ```sh
-infra/backup/test-restore.sh ~/chemin/finance-cockpit-age.key
+infra/backup/test-restore.sh ~/path/finance-cockpit-age.key
 ```
 
-Vérifié le 13/10/2026 avec un bucket S3 de test : `RESTORE TEST PASSED`, et restauration
-directe depuis le bucket (cas où le disque local est perdu).
-
-**Restauration réelle** (la base est écrasée) :
+**Real restore** (overwrites the database):
 
 ```sh
 cd infra
 docker compose stop api
-# depuis la copie locale la plus récente
+# from the latest local copy
 docker compose --profile prod run --rm -v ~/finance-cockpit-age.key:/run/age-identity:ro \
   --entrypoint /usr/local/bin/restore.sh backup latest /run/age-identity
-# ou depuis le bucket (machine neuve)
+# or from the bucket (new machine)
 docker compose --profile prod run --rm -v ~/finance-cockpit-age.key:/run/age-identity:ro \
-  --entrypoint /usr/local/bin/restore.sh backup remote:<bucket>/finance-cockpit/<fichier>.dump.age /run/age-identity
+  --entrypoint /usr/local/bin/restore.sh backup remote:<bucket>/finance-cockpit/<file>.dump.age /run/age-identity
 docker compose start api
 ```
 
-Sur macOS avec Docker Desktop, la clé doit être dans un dossier partagé avec Docker (ton
-répertoire utilisateur l'est par défaut, `/tmp` non).
+On macOS with Docker Desktop, the key must be in a folder shared with Docker (your home folder is
+by default, `/tmp` is not).
 
-## Sécurité : récapitulatif
+## Security summary
 
-- Aucun port entrant ; web publié sur `127.0.0.1` seulement.
-- db et api sans accès internet (réseau `internal`).
-- JWT Access vérifié par l'API (signature, audience, émetteur, expiration, email).
-- Images non-root : api (`node`), web (`nginx-unprivileged`), backup (`postgres`),
-  cloudflared (`nonroot`) ; api et cloudflared en système de fichiers en lecture seule.
-- Versions épinglées : images par tag exact, dépendances par lockfile (`pnpm install --frozen-lockfile`).
-- Secrets uniquement dans `infra/.env` (git-ignoré) ; clé privée de sauvegarde hors serveur.
+- No inbound port; web published on `127.0.0.1` only.
+- db, api and redis without internet access (`internal` network).
+- Access JWT verified by the API and the agent service (signature, audience, issuer, expiry,
+  email).
+- Non-root images: api (`node`), web (`nginx-unprivileged`), agent (`agent`), backup
+  (`postgres`), cloudflared (`nonroot`); read-only filesystems where possible.
+- Pinned versions: exact image tags, lockfiles (`pnpm install --frozen-lockfile`, `uv sync
+--frozen`), two-week cooldown on new releases.
+- Secrets only in `infra/.env` (git-ignored); backup private key off the server.

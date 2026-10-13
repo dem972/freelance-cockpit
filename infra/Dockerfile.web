@@ -9,6 +9,9 @@ COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter "@fc/web..."
 COPY packages packages
 COPY apps/web apps/web
+# AGPL-3.0 §13: a modified deployment must link to its own source.
+ARG VITE_SOURCE_URL=""
+ENV VITE_SOURCE_URL=${VITE_SOURCE_URL}
 RUN pnpm --filter @fc/web build
 
 # Runtime: nginx running as non-root, listening on 8080.

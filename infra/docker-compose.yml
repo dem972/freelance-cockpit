@@ -56,6 +56,8 @@ services:
     build:
       context: ..
       dockerfile: infra/Dockerfile.web
+      args:
+        VITE_SOURCE_URL: ${SOURCE_URL:-}
     restart: unless-stopped
     ports:
       # Loopback only. With AUTH_MODE=access the API answers 401 here: remote

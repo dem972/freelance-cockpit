@@ -2,6 +2,7 @@
 name = "copilot"
 version = "0.0.0"
 description = "Finance Cockpit agents: copilot chat, reports, rates watch (LangGraph + Celery)"
+license = "AGPL-3.0-or-later"
 requires-python = ">=3.13,<3.14"
 dependencies = [
   # Agent graphs with human-in-the-loop interrupts and Postgres checkpoints.

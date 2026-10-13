@@ -17,6 +17,13 @@ import { Saisie } from "@/pages/Saisie";
 import { Simulator } from "@/pages/Simulator";
 import { Veille } from "@/pages/Veille";
 
+/** AGPL-3.0 §13: users interacting over a network must be offered the source. */
+const UPSTREAM = "https://github.com/finance-cockpit/finance-cockpit"; // TODO: set when the repo is public
+const SOURCE_URL =
+  import.meta.env.VITE_SOURCE_URL !== undefined && import.meta.env.VITE_SOURCE_URL !== ""
+    ? import.meta.env.VITE_SOURCE_URL
+    : UPSTREAM;
+
 // Demo mode is a separate route and bundle, enabled by a build-time flag.
 const DEMO_ENABLED = import.meta.env.VITE_DEMO !== "false";
 const Demo = lazy(() => import("@/pages/Demo"));
@@ -77,7 +84,16 @@ export function App() {
           </main>
           <footer className="mx-auto w-full max-w-6xl px-4 pb-6 text-xs text-muted-foreground md:px-6">
             Estimations indicatives, sans valeur de conseil fiscal ou comptable. Vérifie toujours
-            avec les simulateurs officiels.
+            avec les simulateurs officiels. Logiciel libre sous licence AGPL-3.0 :{" "}
+            <a
+              href={SOURCE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline"
+            >
+              code source
+            </a>
+            .
           </footer>
         </SidebarInset>
       </SidebarProvider>

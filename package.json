@@ -1,6 +1,7 @@
 {
   "name": "finance-cockpit",
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "packageManager": "pnpm@10.22.0",
   "engines": {
