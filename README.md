@@ -1,5 +1,7 @@
 # Finance Cockpit
 
+![alt text](image.png)
+
 **Self-hosted cash-flow cockpit and tax simulator for French freelancers.**
 Every rate is sourced. Every amount comes from a tested engine. The AI copilot never invents a
 number.
