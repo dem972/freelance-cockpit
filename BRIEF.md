@@ -160,3 +160,27 @@ Vues pour le cockpit : `v_available_balance`, `v_coverage`, `v_ytd` (réalisé v
 4. **Simulateur public ?** → non, tout passe derrière Access (§8, §9).
 5. **Jeu de cas réels** → pas de jeu fourni : cas de référence construits depuis les simulateurs
    officiels, datés et sourcés (§5).
+
+## 13. Copilot / autopilot IA (décisions du 2026-10-13)
+
+L'IA n'invente aucun chiffre : le moteur reste la seule source des montants, l'IA l'appelle comme
+un outil, explique et propose. Toute écriture (saisie, réglage, taux) est confirmée par
+l'utilisateur.
+
+| Sujet           | Décision                                                                  |
+| --------------- | ------------------------------------------------------------------------- |
+| Langage agents  | Python (exception assumée au « TypeScript partout ») : LangGraph + Celery |
+| Tâches          | Celery (worker + beat), broker Redis interne, résultats dans Postgres     |
+| Base            | Postgres + pgvector (mémoire, sources officielles indexées)               |
+| Modèles         | OpenAI, configurables (`OPENAI_MODEL`, `OPENAI_MODEL_FAST`, embeddings)   |
+| Alertes         | Règles déterministes, affichées dans l'app (pas d'e-mail ni de push)      |
+| Veille des taux | À la demande + hebdomadaire ; propositions sourcées à valider dans l'app  |
+
+Jalons :
+
+| #   | Jalon                 | Critère de fin                                                                     |
+| --- | --------------------- | ---------------------------------------------------------------------------------- |
+| J8  | Alertes               | Couverture, échéances, seuils TVA/micro, fin d'Acre ; fil d'alertes dans l'app     |
+| J9  | Copilot               | Service agent (FastAPI + Celery), chat avec outils, écritures confirmées           |
+| J10 | Rapports + optimiseur | Optimiseur déterministe (moteur), rapport mensuel rédigé, à la demande et planifié |
+| J11 | Veille des taux       | Hebdo + à la demande, extraits sourcés indexés (pgvector), propositions à valider  |

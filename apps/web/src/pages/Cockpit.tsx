@@ -7,7 +7,8 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import type { CockpitData } from "@fc/engine/cockpit";
+import type { Alert, CockpitData } from "@fc/engine/cockpit";
+import { AlertsStrip } from "@/components/alerts";
 import { AcreCard } from "@/components/AcreCard";
 import { BreakdownBar } from "@/components/BreakdownBar";
 import { CoverageRing } from "@/components/CoverageRing";
@@ -90,7 +91,15 @@ function Echeancier({ data }: { data: CockpitData }) {
 }
 
 /** The cockpit screen; data comes from the API (real) or is built locally (demo). */
-export function CockpitView({ data }: { data: CockpitData }) {
+export function CockpitView({
+  data,
+  alerts,
+  reloadAlerts,
+}: {
+  data: CockpitData;
+  alerts: Alert[];
+  reloadAlerts?: () => void;
+}) {
   const lastMonth = data.asOf.startsWith(String(data.year))
     ? Number(data.asOf.slice(5, 7))
     : data.asOf < `${String(data.year)}-01-01`
@@ -108,6 +117,10 @@ export function CockpitView({ data }: { data: CockpitData }) {
 
   return (
     <div className="grid grid-cols-1 gap-6">
+      <AlertsStrip
+        alerts={alerts}
+        {...(reloadAlerts === undefined ? {} : { reload: reloadAlerts })}
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           highlight
@@ -190,6 +203,7 @@ function CockpitSkeleton() {
 
 export function Cockpit({ year }: { year: number }) {
   const { data, error } = useApi<CockpitData>(`/cockpit?year=${String(year)}`);
+  const alerts = useApi<Alert[]>(`/alerts?year=${String(year)}`);
   return (
     <div className="grid grid-cols-1 gap-6">
       <PageHeader
@@ -198,7 +212,11 @@ export function Cockpit({ year }: { year: number }) {
         description={`Ta trésorerie freelance ${String(year)} en un coup d'œil`}
       />
       <ErrorText error={error} />
-      {data === null ? error === null && <CockpitSkeleton /> : <CockpitView data={data} />}
+      {data === null ? (
+        error === null && <CockpitSkeleton />
+      ) : (
+        <CockpitView data={data} alerts={alerts.data ?? []} reloadAlerts={alerts.reload} />
+      )}
     </div>
   );
 }

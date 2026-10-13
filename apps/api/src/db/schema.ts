@@ -111,3 +111,9 @@ export const balanceSnapshots = pgTable("balance_snapshots", {
   date: date("date").primaryKey(),
   amount: cents("amount").notNull(),
 });
+
+/** Alerts the user dismissed (keys change when the situation changes). */
+export const alertDismissals = pgTable("alert_dismissals", {
+  key: text("key").primaryKey(),
+  dismissedAt: timestamp("dismissed_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -15,6 +15,13 @@
       "when": 1791895103563,
       "tag": "0001_views",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791900271294,
+      "tag": "0002_alert_dismissals",
+      "breakpoints": true
     }
   ]
 }

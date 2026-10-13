@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
   balanceFromLedger,
+  computeAlerts,
   computeCockpit,
   computePlan,
   type CockpitData,
@@ -106,7 +107,7 @@ export default function Demo() {
         title="Démo"
         description="Données fictives calculées dans le navigateur, rien n'est enregistré"
       />
-      <CockpitView data={data} />
+      <CockpitView data={data} alerts={computeAlerts(data)} />
     </div>
   );
 }

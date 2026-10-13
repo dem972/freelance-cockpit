@@ -1,9 +1,12 @@
 import { lazy, Suspense } from "react";
+import type { Alert } from "@fc/engine/cockpit";
+import { AlertsBell } from "@/components/alerts";
 import { DEMO, OUTILS, PILOTAGE, AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useApi } from "@/lib/api";
 import { useRoute, type Route } from "@/lib/router";
 import { useTheme } from "@/lib/theme";
 import { Cockpit } from "@/pages/Cockpit";
@@ -43,6 +46,8 @@ export function App() {
   const route = useRoute();
   const { theme, setTheme } = useTheme();
   const item = [...PILOTAGE, ...OUTILS, DEMO].find((n) => n.route === route) ?? PILOTAGE[0];
+  // Refetched on every page change, so saving data elsewhere refreshes the count.
+  const alerts = useApi<Alert[]>(`/alerts?year=${String(YEAR)}&r=${route}`);
   return (
     <TooltipProvider delayDuration={200}>
       <SidebarProvider>
@@ -52,9 +57,12 @@ export function App() {
             <SidebarTrigger className="-ml-1" aria-label="Afficher ou masquer le menu" />
             <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
             <span className="text-sm font-medium">{item?.label}</span>
-            <span className="ml-auto hidden text-xs text-muted-foreground sm:inline">
+            <span className="ml-auto hidden text-xs text-muted-foreground md:inline">
               Estimations indicatives, sans valeur de conseil fiscal
             </span>
+            <div className="ml-auto md:ml-2">
+              <AlertsBell alerts={alerts.data ?? []} reload={alerts.reload} />
+            </div>
           </header>
           <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-6">
             <Page route={route} />

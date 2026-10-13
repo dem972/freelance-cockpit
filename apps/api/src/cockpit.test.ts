@@ -81,3 +81,16 @@ describe("GET /api/cockpit", () => {
     expect((res.body as CockpitData).coverage.ratio).toBeNull();
   });
 });
+
+describe("alerts", () => {
+  it("lists a late deadline and hides it once dismissed", async () => {
+    await call("POST", "/transactions", encaissement("2026-01-10", 500_000));
+    const alerts = (await call("GET", "/alerts")).body as { key: string; severity: string }[];
+    const late = alerts.find((a) => a.key.startsWith("deadline-late-"));
+    expect(late?.severity).toBe("critical");
+    const res = await app.request(`/api/alerts/${String(late?.key)}/dismiss`, { method: "POST" });
+    expect(res.status).toBe(204);
+    const after = (await call("GET", "/alerts")).body as { key: string }[];
+    expect(after.some((a) => a.key === late?.key)).toBe(false);
+  });
+});
