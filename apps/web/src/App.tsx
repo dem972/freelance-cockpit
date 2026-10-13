@@ -1,36 +1,38 @@
-import { useEffect, useState } from "react";
-import { HealthResponse } from "@fc/shared";
+import { navigate, useRoute, type Route } from "./lib/router.js";
+import { Simulator } from "./pages/Simulator.js";
 
-type State = { kind: "loading" } | { kind: "ok"; health: HealthResponse } | { kind: "error" };
+const NAV: { route: Route; label: string }[] = [
+  { route: "/simulateur", label: "Simulateur" },
+  { route: "/cockpit", label: "Cockpit" },
+];
 
 export function App() {
-  const [state, setState] = useState<State>({ kind: "loading" });
-
-  useEffect(() => {
-    fetch("/api/health")
-      .then((res) => res.json())
-      .then((json) => {
-        setState({ kind: "ok", health: HealthResponse.parse(json) });
-      })
-      .catch(() => {
-        setState({ kind: "error" });
-      });
-  }, []);
-
+  const route = useRoute();
   return (
-    <main>
-      <h1>Finance Cockpit</h1>
-      <p>
-        API :{" "}
-        {state.kind === "loading"
-          ? "…"
-          : state.kind === "error"
-            ? "injoignable"
-            : `${state.health.status} (db ${state.health.db})`}
-      </p>
-      <p>
-        <small>Estimations uniquement, ne constitue pas un conseil fiscal.</small>
-      </p>
-    </main>
+    <>
+      <header className="topbar">
+        <span className="brand">Finance Cockpit</span>
+        <nav>
+          {NAV.map((n) => (
+            <a
+              key={n.route}
+              href={n.route}
+              aria-current={route === n.route ? "page" : undefined}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(n.route);
+              }}
+            >
+              {n.label}
+            </a>
+          ))}
+        </nav>
+      </header>
+      <main>{route === "/simulateur" ? <Simulator /> : <p>Cockpit : jalon J5.</p>}</main>
+      <footer className="disclaimer">
+        Estimations indicatives, sans valeur de conseil fiscal ou comptable. Vérifie toujours avec
+        les simulateurs officiels.
+      </footer>
+    </>
   );
 }
