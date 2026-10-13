@@ -18,7 +18,7 @@ import { Simulator } from "@/pages/Simulator";
 import { Veille } from "@/pages/Veille";
 
 /** AGPL-3.0 §13: users interacting over a network must be offered the source. */
-const UPSTREAM = "https://github.com/finance-cockpit/finance-cockpit"; // TODO: set when the repo is public
+const UPSTREAM = "https://github.com/dem972/freelance-cockpit";
 const SOURCE_URL =
   import.meta.env.VITE_SOURCE_URL !== undefined && import.meta.env.VITE_SOURCE_URL !== ""
     ? import.meta.env.VITE_SOURCE_URL

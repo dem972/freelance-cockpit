@@ -45,7 +45,7 @@ infra/            Docker Compose, nginx, Cloudflare Tunnel + Access, encrypted b
 Requirements: Node 24, pnpm 10, Docker.
 
 ```sh
-git clone <this repo> && cd finance-cockpit
+git clone https://github.com/dem972/freelance-cockpit.git && cd freelance-cockpit
 pnpm install
 
 cp infra/.env.example infra/.env
