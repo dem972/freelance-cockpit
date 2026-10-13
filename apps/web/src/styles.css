@@ -329,3 +329,113 @@ td:first-child {
 input[type="range"] {
   padding: 0;
 }
+h4 {
+  margin: 16px 0 8px;
+}
+.stack {
+  display: grid;
+  gap: 16px;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.actions button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+td.wrap {
+  white-space: normal;
+  min-width: 140px;
+}
+.neg {
+  color: var(--danger);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  display: grid;
+  gap: 8px;
+}
+.timeline li {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 12px;
+}
+.timeline p {
+  margin: 2px 0 6px;
+}
+.timeline button {
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.grid-6 {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 700px) {
+  .grid-6 {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+.months {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  margin: 12px 0;
+}
+.month-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: 12px;
+  text-align: center;
+}
+.dow {
+  color: var(--muted);
+}
+.day {
+  padding: 4px 0;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+button.day {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+button.day.off {
+  background: var(--c-impot);
+  color: #fff;
+  border-color: transparent;
+}
+.day.closed {
+  color: var(--muted);
+  opacity: 0.6;
+}
+.day.ferie {
+  text-decoration: underline dotted;
+}

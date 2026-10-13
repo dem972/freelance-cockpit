@@ -10,10 +10,13 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.9",
+    "drizzle-kit": "0.31.11",
     "esbuild": "0.28.2",
     "tsx": "4.23.15"
   },
   "dependencies": {
+    "@fc/engine": "workspace:*",
     "@fc/shared": "workspace:*",
     "@hono/node-server": "2.1.5",
     "drizzle-orm": "0.45.4",

@@ -3,6 +3,7 @@ import { z } from "zod";
 const Env = z.object({
   PORT: z.coerce.number().int().default(3000),
   DATABASE_URL: z.url(),
+  MIGRATIONS_DIR: z.string().default("../../db/migrations"),
 });
 export type Env = z.infer<typeof Env>;
 

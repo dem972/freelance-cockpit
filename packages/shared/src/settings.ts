@@ -27,6 +27,8 @@ export const Settings = z.object({
   /** Date de début d'activité ouvrant droit à l'Acre, ou null si pas d'Acre. */
   acreDebutActivite: IsoDate.nullable(),
   tva: z.enum(["franchise", "assujetti"]),
+  /** Micro : périodicité de déclaration et de paiement à l'Urssaf. */
+  periodiciteUrssaf: z.enum(["mensuelle", "trimestrielle"]),
   situationFamiliale: z.enum(["seul", "couple"]),
   /** Nombre de parts fiscales du foyer (par quart de part). */
   parts: z.number().min(1).multipleOf(0.25),
@@ -65,6 +67,7 @@ export const DEFAULT_SETTINGS: Settings = {
   versementLiberatoire: false,
   acreDebutActivite: null,
   tva: "franchise",
+  periodiciteUrssaf: "mensuelle",
   situationFamiliale: "seul",
   parts: 1,
   autresRevenusImposables: 0 as Cents,

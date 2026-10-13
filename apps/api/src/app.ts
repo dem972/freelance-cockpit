@@ -1,12 +1,25 @@
 import { Hono } from "hono";
-import type { HealthResponse } from "@fc/shared";
+import { HTTPException } from "hono/http-exception";
+import type { HealthResponse, IsoDate } from "@fc/shared";
+import type { Db } from "./db.js";
+import { ledgerRoutes } from "./routes/ledger.js";
 
 export interface AppDeps {
   pingDb: () => Promise<boolean>;
+  /** Absent in health-only tests. */
+  db?: Db;
+  today?: () => IsoDate;
 }
 
 export function createApp(deps: AppDeps) {
   const app = new Hono().basePath("/api");
+
+  app.onError((err, c) => {
+    if (err instanceof HTTPException) return err.getResponse();
+    if (pgCode(err) === "23505") return c.json({ error: "conflict" }, 409);
+    console.error(err);
+    return c.json({ error: "internal" }, 500);
+  });
 
   app.get("/health", async (c) => {
     const up = await deps.pingDb();
@@ -14,5 +27,23 @@ export function createApp(deps: AppDeps) {
     return c.json(body, up ? 200 : 503);
   });
 
+  if (deps.db !== undefined) {
+    const today = deps.today ?? (() => new Date().toISOString().slice(0, 10));
+    app.route("/", ledgerRoutes({ db: deps.db, today }));
+  }
+
   return app;
+}
+
+/** Postgres error code, possibly wrapped by Drizzle in `cause`. */
+function pgCode(err: unknown): string | undefined {
+  for (
+    let e: unknown = err;
+    typeof e === "object" && e !== null;
+    e = (e as { cause?: unknown }).cause
+  ) {
+    const code = (e as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+  }
+  return undefined;
 }

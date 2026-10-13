@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./societe": "./src/societe.ts"
+    "./societe": "./src/societe.ts",
+    "./cockpit": "./src/cockpit.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
