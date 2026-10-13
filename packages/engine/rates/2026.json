@@ -1,4 +1,209 @@
 {
   "year": 2026,
-  "rates": {}
+  "rates": {
+    "micro.cotisations.bnc.regime_general": {
+      "value": 0.256,
+      "unit": "rate",
+      "source_url": "https://www.urssaf.fr/accueil/actualites/taux-cotisations-autoentrepeneur.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux global AE en BNC affiliés au régime général, à partir du 1er janvier 2026 (décret du 30 mai 2024)."
+    },
+    "micro.cotisations.bnc.cipav": {
+      "value": 0.232,
+      "unit": "rate",
+      "source_url": "https://www.urssaf.fr/accueil/actualites/taux-cotisations-autoentrepeneur.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux global AE relevant de la Cipav depuis le 1er juillet 2024."
+    },
+    "micro.acre.bnc.regime_general.debut_avant_bascule": {
+      "value": 0.128,
+      "unit": "rate",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux Acre BNC non réglementé, débuts d'activité jusqu'au 30/06/2026."
+    },
+    "micro.acre.bnc.regime_general.debut_apres_bascule": {
+      "value": 0.192,
+      "unit": "rate",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux Acre BNC non réglementé, débuts d'activité à compter du 01/07/2026."
+    },
+    "micro.acre.bnc.cipav.debut_avant_bascule": {
+      "value": 0.134,
+      "unit": "rate",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux Acre Cipav, débuts d'activité jusqu'au 30/06/2026. Marqué * par l'Urssaf : réhaussé pour tenir compte d'un taux minimum."
+    },
+    "micro.acre.bnc.cipav.debut_apres_bascule": {
+      "value": 0.174,
+      "unit": "rate",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Taux Acre Cipav, débuts d'activité à compter du 01/07/2026."
+    },
+    "micro.acre.date_bascule": {
+      "value": "2026-07-01",
+      "unit": "date",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Date de début d'activité à partir de laquelle le taux Acre réduit passe de 50 % à 75 % du taux plein."
+    },
+    "micro.cfp.liberal": {
+      "value": 0.002,
+      "unit": "rate",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Contribution à la formation professionnelle, professions libérales réglementées et non réglementées, en % du CA."
+    },
+    "micro.vl.bnc": {
+      "value": 0.022,
+      "unit": "rate",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F23267",
+      "verified_on": "2026-10-13",
+      "note": "Versement forfaitaire libératoire, activités BNC (CGI art. 151-0)."
+    },
+    "micro.vl.plafond_rfr_par_part": {
+      "value": 29579,
+      "unit": "eur",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F23267",
+      "verified_on": "2026-10-13",
+      "note": "Plafond de revenu fiscal de référence N-2 pour opter au VFL, par part (29 579 € personne seule, 59 158 € couple). Écart entre sources : modele-social (Urssaf, v11.1.0) retient 29 315 € (2e tranche du barème 2025) ; service-public (vérifié le 13/05/2026) indique 29 579 €. À confirmer sur impots.gouv.",
+      "flag": "conflict"
+    },
+    "micro.abattement.bnc": {
+      "value": 0.34,
+      "unit": "rate",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F23267",
+      "verified_on": "2026-10-13",
+      "note": "Abattement forfaitaire micro-BNC (CGI art. 102 ter)."
+    },
+    "micro.abattement.minimum": {
+      "value": 305,
+      "unit": "eur",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F23267",
+      "verified_on": "2026-10-13",
+      "note": "Montant minimal de l'abattement forfaitaire."
+    },
+    "micro.plafond_ca.bnc": {
+      "value": 83600,
+      "unit": "eur",
+      "source_url": "https://www.autoentrepreneur.urssaf.fr/portail/accueil/sinformer-sur-le-statut/lessentiel-du-statut.html",
+      "verified_on": "2026-10-13",
+      "note": "Plafond de CA micro pour prestations de services BIC/BNC (2026). Dépassé deux années consécutives : sortie du régime."
+    },
+    "tva.franchise.seuil.services": {
+      "value": 37500,
+      "unit": "eur",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F21746",
+      "verified_on": "2026-10-13",
+      "note": "Seuil de franchise en base, prestations de services. Dépassé sur N : TVA due au 1er janvier N+1."
+    },
+    "tva.franchise.seuil_majore.services": {
+      "value": 41250,
+      "unit": "eur",
+      "source_url": "https://entreprendre.service-public.gouv.fr/vosdroits/F21746",
+      "verified_on": "2026-10-13",
+      "note": "Seuil majoré, prestations de services. Dépassé en cours d'année : TVA due dès le 1er jour de dépassement."
+    },
+    "tva.taux_normal": {
+      "value": 0.2,
+      "unit": "rate",
+      "source_url": "https://www.impots.gouv.fr/particulier/plusieurs-taux-de-tva",
+      "verified_on": "2026-10-13",
+      "note": "Taux normal France métropolitaine (CGI art. 278)."
+    },
+    "ir.bareme.seuil.1": {
+      "value": 11600,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.seuil.2": {
+      "value": 29579,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.seuil.3": {
+      "value": 84577,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.seuil.4": {
+      "value": 181917,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.taux.1": {
+      "value": 0,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.taux.2": {
+      "value": 0.11,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.taux.3": {
+      "value": 0.3,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.taux.4": {
+      "value": 0.41,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.bareme.taux.5": {
+      "value": 0.45,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F1419",
+      "verified_on": "2026-10-13",
+      "note": "Barème de la loi de finances pour 2026 (revenus 2025). Le barème des revenus 2026 sera fixé par la loi de finances pour 2027 : estimation tant qu'il n'est pas publié."
+    },
+    "ir.plafond_demi_part": {
+      "value": 1807,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F2705",
+      "verified_on": "2026-10-13",
+      "note": "Plafonnement de l'avantage du quotient familial par demi-part supplémentaire (revenus 2025)."
+    },
+    "ir.decote.forfait.seul": {
+      "value": 897,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F34328",
+      "verified_on": "2026-10-13",
+      "note": "Décote = 897 € − 45,25 % de l'impôt brut, si impôt brut ≤ 1 982 € (personne seule, revenus 2025)."
+    },
+    "ir.decote.forfait.couple": {
+      "value": 1483,
+      "unit": "eur",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F34328",
+      "verified_on": "2026-10-13",
+      "note": "Décote = 1 483 € − 45,25 % de l'impôt brut, si impôt brut ≤ 3 277 € (couple, revenus 2025)."
+    },
+    "ir.decote.taux": {
+      "value": 0.4525,
+      "unit": "rate",
+      "source_url": "https://www.service-public.gouv.fr/particuliers/vosdroits/F34328",
+      "verified_on": "2026-10-13",
+      "note": "Taux appliqué à l'impôt brut dans le calcul de la décote (revenus 2025)."
+    }
+  }
 }

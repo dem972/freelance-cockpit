@@ -13,6 +13,8 @@
     "@fc/shared": "workspace:*"
   },
   "devDependencies": {
+    "modele-social": "11.1.0",
+    "publicodes": "1.10.4",
     "vitest": "5.0.4"
   }
 }

@@ -5,7 +5,7 @@ describe("RateTable", () => {
   it("rejects a rate without source", () => {
     const result = RateTable.safeParse({
       year: 2026,
-      rates: { example: { value: 0.1, verified_on: "2026-01-01" } },
+      rates: { example: { unit: "rate", value: 0.1, verified_on: "2026-01-01" } },
     });
     expect(result.success).toBe(false);
   });
@@ -15,6 +15,7 @@ describe("RateTable", () => {
       year: 2026,
       rates: {
         example: {
+          unit: "rate",
           value: 0.1,
           source_url: "https://www.urssaf.fr/",
           verified_on: "2026-01-01",

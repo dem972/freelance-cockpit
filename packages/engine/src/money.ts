@@ -13,3 +13,7 @@ export function applyRate(amount: Cents, rate: number): Cents {
 export function eurosToCents(euros: number): Cents {
   return (Math.sign(euros) * Math.round(Math.abs(euros) * 100)) as Cents;
 }
+
+export function sum(values: readonly number[]): Cents {
+  return values.reduce((a, b) => a + b, 0) as Cents;
+}
