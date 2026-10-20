@@ -18,7 +18,7 @@ volumes:
 services:
   db:
     # Postgres 16 + pgvector (embeddings for the agents).
-    image: pgvector/pgvector:0.8.6-pg16
+    image: pgvector/pgvector:0.8.7-pg16
     restart: unless-stopped
     environment:
       POSTGRES_DB: cockpit
