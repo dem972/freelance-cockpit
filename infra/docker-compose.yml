@@ -157,7 +157,7 @@ services:
 
   cloudflared:
     profiles: [prod]
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.0
     restart: unless-stopped
     read_only: true
     # Remotely managed tunnel: the public hostname → http://web:8080 route and
