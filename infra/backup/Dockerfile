@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # pg_dump must match the server major version (16).
-FROM postgres:16.10-alpine
+FROM postgres:18.4-alpine
 # age: encryption to a public key (the private key never lives on the server).
 # rclone: upload to any S3-compatible bucket.
 RUN apk add --no-cache age rclone
